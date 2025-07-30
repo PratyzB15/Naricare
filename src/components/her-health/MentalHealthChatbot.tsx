@@ -41,10 +41,11 @@ export function MentalHealthChatbot() {
   });
   
   useEffect(() => {
-    if (scrollAreaRef.current) {
-        scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')?.scrollTo({
-            top: scrollAreaRef.current.scrollHeight,
-            behavior: 'smooth',
+    const viewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: 'smooth',
       });
     }
   }, [chatHistory]);
@@ -52,15 +53,16 @@ export function MentalHealthChatbot() {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const userMessage: ChatMessage = { role: 'user', content: values.message };
-    const currentChatHistory = [...chatHistory, userMessage];
-    setChatHistory(currentChatHistory);
+    const newChatHistory = [...chatHistory, userMessage];
+    setChatHistory(newChatHistory);
     form.reset();
 
     startTransition(async () => {
       try {
+        // Pass the *new* chat history to the action
         const result = await mentalHealthChatbotAction({ 
           message: values.message,
-          chatHistory: chatHistory,
+          chatHistory: newChatHistory.slice(0, -1), // Exclude the last user message from history for the prompt
         });
         const botMessage: ChatMessage = { role: 'bot', content: result.response };
         setChatHistory(prev => [...prev, botMessage]);
@@ -71,7 +73,8 @@ export function MentalHealthChatbot() {
             title: 'Chatbot Error',
             description: 'Could not get a response at this time. Please try again later.',
         });
-        setChatHistory(chatHistory); // Revert to previous state on error
+        // Revert to the state before the user sent the message on error
+        setChatHistory(chatHistory); 
       }
     });
   };
