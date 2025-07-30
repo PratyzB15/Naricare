@@ -44,6 +44,13 @@ export default function SignUpPage() {
                 </div>
               </RadioGroup>
             </div>
+            
+            {userType === 'family' && (
+              <div className="space-y-2">
+                <Label htmlFor="uniqueId">Female User's Unique ID</Label>
+                <Input id="uniqueId" type="text" placeholder="Enter the user's unique ID to track" required />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

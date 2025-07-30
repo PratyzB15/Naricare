@@ -56,8 +56,8 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
             predicted: predictedDays,
           }}
           modifiersClassNames={{
-            period: 'bg-primary text-primary-foreground',
-            predicted: 'bg-accent text-accent-foreground',
+            period: 'bg-destructive text-destructive-foreground',
+            predicted: 'bg-pink-200 text-pink-800',
             today: 'border-2 border-accent rounded-full'
           }}
           className="p-0"
@@ -65,8 +65,8 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
       </CardContent>
       <CardFooter className="flex justify-between items-center border-t pt-6">
         <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-primary"></span>Logged Period</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-accent"></span>Predicted</div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-destructive"></span>Logged Period</div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-pink-200"></span>Predicted</div>
         </div>
         <Button onClick={() => onLogPeriod(selectedRange)} disabled={!selectedRange?.from || !selectedRange?.to}>
           <CalendarIcon className="mr-2 h-4 w-4" />
