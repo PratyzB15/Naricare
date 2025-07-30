@@ -5,7 +5,7 @@ import type { DateRange } from 'react-day-picker';
 import { addDays, differenceInDays, formatISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
-import { PeriodPredictionCard } from '@/components/her-health/PeriodPredictionCard';
+import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
 import type { PeriodPrediction } from '@/components/her-health/PeriodPredictionCard';
 import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
 import type { Medication } from '@/components/her-health/MedicationReminderCard';
@@ -87,11 +87,7 @@ export function PeriodTracker() {
         />
       </div>
       <div className="lg:col-span-3 flex flex-col gap-4">
-        <PeriodPredictionCard
-          cycles={cycles}
-          onPrediction={setPrediction}
-          isPredicting={isPredicting}
-        />
+        <CyclePhaseCard lastCycleStart={cycles.length > 0 ? cycles[cycles.length - 1].start : undefined} />
         <MedicationReminderCard
           medications={medications}
           setMedications={setMedications}
