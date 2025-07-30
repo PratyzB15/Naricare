@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { predictPeriodAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 export type PeriodPrediction = {
   predictedStartDate: string;
@@ -24,6 +26,7 @@ export type PeriodPrediction = {
 interface PeriodPredictionCardProps {
   cycles: { start: Date; end: Date }[];
   onPrediction: (prediction: PeriodPrediction | null) => void;
+  isPredicting: boolean;
 }
 
 const formSchema = z.object({
@@ -31,10 +34,12 @@ const formSchema = z.object({
   physicalSymptoms: z.string().min(3, 'Please describe any symptoms.').max(200),
 });
 
-export function PeriodPredictionCard({ cycles, onPrediction }: PeriodPredictionCardProps) {
+export function PeriodPredictionCard({ cycles, onPrediction, isPredicting }: PeriodPredictionCardProps) {
   const [isPending, startTransition] = useTransition();
   const [predictionResult, setPredictionResult] = useState<PeriodPrediction | null>(null);
   const { toast } = useToast();
+  const hasLoggedCycles = cycles.length > 0;
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,7 +54,7 @@ export function PeriodPredictionCard({ cycles, onPrediction }: PeriodPredictionC
     onPrediction(null);
     startTransition(async () => {
       try {
-        if (cycles.length === 0) {
+        if (!hasLoggedCycles) {
             toast({
                 variant: 'destructive',
                 title: 'Prediction Error',
@@ -80,9 +85,20 @@ export function PeriodPredictionCard({ cycles, onPrediction }: PeriodPredictionC
           Period Prediction
         </CardTitle>
         <CardDescription>
-          Enter your current mood and symptoms for an AI-powered prediction.
+          Enter your current mood and symptoms for a more accurate AI-powered prediction.
         </CardDescription>
       </CardHeader>
+      {!hasLoggedCycles ? (
+         <CardContent>
+             <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Log Your First Cycle</AlertTitle>
+                <AlertDescription>
+                    Please log your last period on the calendar to enable predictions.
+                </AlertDescription>
+            </Alert>
+         </CardContent>
+      ) : (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
@@ -125,13 +141,14 @@ export function PeriodPredictionCard({ cycles, onPrediction }: PeriodPredictionC
             />
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isPending || isPredicting}>
+              {(isPending || isPredicting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Predict Next Period
             </Button>
           </CardFooter>
         </form>
       </Form>
+      )}
       {predictionResult && (
         <CardContent className="border-t pt-6">
           <h4 className="font-semibold mb-2">Prediction Result:</h4>
