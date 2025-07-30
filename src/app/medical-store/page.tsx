@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 const products = [
   {
@@ -32,31 +33,33 @@ const products = [
 
 export default function MedicalStorePage() {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">Medical Store</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <Card key={product.name}>
-            <CardHeader>
-              <Image 
-                src={product.image}
-                data-ai-hint={product.dataAiHint}
-                alt={product.name}
-                width={300}
-                height={200}
-                className="rounded-t-lg" 
-              />
-            </CardHeader>
-            <CardContent>
-              <CardTitle>{product.name}</CardTitle>
-              <p className="text-lg font-semibold text-primary">${product.price}</p>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full">Add to Cart</Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </div>
+    <AppLayout>
+        <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6 text-center">Medical Store</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.map((product) => (
+            <Card key={product.name}>
+                <CardHeader>
+                <Image 
+                    src={product.image}
+                    data-ai-hint={product.dataAiHint}
+                    alt={product.name}
+                    width={300}
+                    height={200}
+                    className="rounded-t-lg" 
+                />
+                </CardHeader>
+                <CardContent>
+                <CardTitle>{product.name}</CardTitle>
+                <p className="text-lg font-semibold text-primary">${product.price}</p>
+                </CardContent>
+                <CardFooter>
+                <Button className="w-full">Add to Cart</Button>
+                </CardFooter>
+            </Card>
+            ))}
+        </div>
+        </div>
+    </AppLayout>
   );
 }

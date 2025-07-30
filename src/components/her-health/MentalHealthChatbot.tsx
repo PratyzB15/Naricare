@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { mentalHealthChatbotAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 
 
@@ -42,9 +42,9 @@ export function MentalHealthChatbot() {
   
   useEffect(() => {
     if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth',
+        scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')?.scrollTo({
+            top: scrollAreaRef.current.scrollHeight,
+            behavior: 'smooth',
       });
     }
   }, [chatHistory]);
@@ -52,15 +52,15 @@ export function MentalHealthChatbot() {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const userMessage: ChatMessage = { role: 'user', content: values.message };
-    const newChatHistory = [...chatHistory, userMessage];
-    setChatHistory(newChatHistory);
+    const currentChatHistory = [...chatHistory, userMessage];
+    setChatHistory(currentChatHistory);
     form.reset();
 
     startTransition(async () => {
       try {
         const result = await mentalHealthChatbotAction({ 
           message: values.message,
-          chatHistory: chatHistory 
+          chatHistory: chatHistory,
         });
         const botMessage: ChatMessage = { role: 'bot', content: result.response };
         setChatHistory(prev => [...prev, botMessage]);
@@ -77,7 +77,7 @@ export function MentalHealthChatbot() {
   };
 
   return (
-    <Card className="shadow-md flex flex-col h-[70vh]">
+    <Card className="shadow-md flex flex-col h-[calc(100vh-4rem)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-2xl">
           <Bot />

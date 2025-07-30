@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import {
   CalendarDays,
-  HeartPulse,
   Bot,
   Baby,
   ShieldCheck,
   Video,
   ShoppingBag,
+  HeartPulse,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -21,18 +21,18 @@ const features = [
     color: 'text-red-400',
   },
   {
-    title: 'Symptom Analysis',
-    description: 'Analyze symptoms and get health predictions.',
-    icon: HeartPulse,
-    href: '/symptom-analysis',
-    color: 'text-pink-400',
-  },
-  {
     title: 'Nutrition & Lifestyle',
     description: 'Personalized diet and lifestyle recommendations.',
-    icon: Bot,
+    icon: HeartPulse,
     href: '/nutrition-lifestyle',
     color: 'text-green-400',
+  },
+  {
+    title: 'Mental Health Chatbot',
+    description: 'Talk to an AI companion for mental wellness.',
+    icon: Bot,
+    href: '/mental-health-chatbot',
+    color: 'text-pink-400',
   },
   {
     title: 'Baby Health Tracker',

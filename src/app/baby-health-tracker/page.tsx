@@ -1,9 +1,10 @@
 import { BabyHealthTracker } from '@/components/her-health/BabyHealthTracker';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export default function BabyHealthTrackerPage() {
   return (
-    <div>
+    <AppLayout>
       <BabyHealthTracker />
-    </div>
+    </AppLayout>
   );
 }
