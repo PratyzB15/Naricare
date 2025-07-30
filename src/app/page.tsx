@@ -5,8 +5,8 @@ import Link from 'next/link';
 import {
   Baby,
   BotMessageSquare,
-  ClipboardHeart,
-  Home,
+  ClipboardList,
+  Home as HomeIcon,
   Menu,
   Nut,
   PanelLeft,
@@ -77,7 +77,7 @@ export default function Home() {
         </Link>
       </div>
       <nav className="flex-1 space-y-2 p-4">
-        <NavLink navId="period-tracker" Icon={ClipboardHeart} label="Period Tracker" />
+        <NavLink navId="period-tracker" Icon={ClipboardList} label="Period Tracker" />
         <NavLink navId="hormonal-nutrition" Icon={Nut} label="Hormonal Nutrition" />
         <NavLink navId="mental-health" Icon={BotMessageSquare} label="Mental Health Chat" />
         <NavLink navId="baby-health" Icon={Baby} label="Baby Health Tracker" />
