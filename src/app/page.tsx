@@ -1,89 +1,129 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { DateRange } from 'react-day-picker';
-import { addDays, differenceInDays } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
-import { Header } from '@/components/her-health/Header';
-import { CalendarCard } from '@/components/her-health/CalendarCard';
-import { PeriodPredictionCard } from '@/components/her-health/PeriodPredictionCard';
-import type { PeriodPrediction } from '@/components/her-health/PeriodPredictionCard';
-import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
-import type { Medication } from '@/components/her-health/MedicationReminderCard';
+import { useState } from 'react';
+import Link from 'next/link';
+import {
+  Baby,
+  BotMessageSquare,
+  ClipboardHeart,
+  Home,
+  Menu,
+  Nut,
+  PanelLeft,
+  Settings,
+  HeartPulse,
+} from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { PeriodTracker } from '@/components/her-health/PeriodTracker';
+import { HormonalNutrition } from '@/components/her-health/HormonalNutrition';
+import { MentalHealthChatbot } from '@/components/her-health/MentalHealthChatbot';
+import { BabyHealthTracker } from '@/components/her-health/BabyHealthTracker';
+
+type NavItem =
+  | 'period-tracker'
+  | 'hormonal-nutrition'
+  | 'mental-health'
+  | 'baby-health';
 
 export default function Home() {
-  const { toast } = useToast();
-  
-  const [cycles, setCycles] = useState<{ start: Date; end: Date }[]>([
-    {
-      start: addDays(new Date(), -30),
-      end: addDays(new Date(), -25),
-    },
-  ]);
-  
-  const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
-  
-  const [medications, setMedications] = useState<Medication[]>([
-    { id: '1', name: 'Contraceptive Pill', time: '21:00' },
-  ]);
+  const [activeComponent, setActiveComponent] =
+    useState<NavItem>('period-tracker');
 
-  useEffect(() => {
-    if (prediction?.predictedStartDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const predictedDate = new Date(prediction.predictedStartDate);
-      const daysUntil = differenceInDays(predictedDate, today);
-      
-      if (daysUntil === 2) {
-        toast({
-          title: 'Period Reminder',
-          description: `Your period is predicted to start in 2 days, on ${predictedDate.toLocaleDateString()}.`,
-        });
-      }
-    }
-  }, [prediction, toast]);
-
-  const handleLogPeriod = (range: DateRange | undefined) => {
-    if (range?.from && range?.to) {
-      const newCycle = { start: range.from, end: range.to };
-      setCycles(prev => [...prev, newCycle].sort((a,b) => a.start.getTime() - b.start.getTime()));
-      toast({
-        title: 'Cycle Logged',
-        description: `Your period from ${range.from.toLocaleDateString()} to ${range.to.toLocaleDateString()} has been logged.`,
-      });
-    } else {
-       toast({
-        variant: 'destructive',
-        title: 'Error Logging Period',
-        description: 'Please select a start and end date for your period.',
-      });
+  const renderComponent = () => {
+    switch (activeComponent) {
+      case 'period-tracker':
+        return <PeriodTracker />;
+      case 'hormonal-nutrition':
+        return <HormonalNutrition />;
+      case 'mental-health':
+        return <MentalHealthChatbot />;
+      case 'baby-health':
+        return <BabyHealthTracker />;
+      default:
+        return <PeriodTracker />;
     }
   };
 
+  const NavLink = ({
+    navId,
+    Icon,
+    label,
+  }: {
+    navId: NavItem;
+    Icon: React.ElementType;
+    label: string;
+  }) => (
+    <Button
+      variant={activeComponent === navId ? 'secondary' : 'ghost'}
+      className="w-full justify-start gap-2"
+      onClick={() => setActiveComponent(navId)}
+    >
+      <Icon className="h-5 w-5" />
+      {label}
+    </Button>
+  );
+
+  const sidebarContent = (
+    <>
+      <div className="flex h-16 shrink-0 items-center border-b px-4 lg:px-6">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+          <HeartPulse className="h-6 w-6 text-accent-foreground/80" />
+          <span className="text-xl">HerHealthAI</span>
+        </Link>
+      </div>
+      <nav className="flex-1 space-y-2 p-4">
+        <NavLink navId="period-tracker" Icon={ClipboardHeart} label="Period Tracker" />
+        <NavLink navId="hormonal-nutrition" Icon={Nut} label="Hormonal Nutrition" />
+        <NavLink navId="mental-health" Icon={BotMessageSquare} label="Mental Health Chat" />
+        <NavLink navId="baby-health" Icon={Baby} label="Baby Health Tracker" />
+      </nav>
+    </>
+  )
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      <Header />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="lg:col-span-4">
-            <CalendarCard 
-              cycles={cycles} 
-              prediction={prediction} 
-              onLogPeriod={handleLogPeriod} 
-            />
-          </div>
-          <div className="lg:col-span-3 flex flex-col gap-4">
-            <PeriodPredictionCard 
-              cycles={cycles}
-              onPrediction={setPrediction}
-            />
-            <MedicationReminderCard 
-              medications={medications}
-              setMedications={setMedications}
-            />
-          </div>
+    <div className="grid min-h-screen w-full md:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          {sidebarContent}
         </div>
-      </main>
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-16 lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0">
+             {sidebarContent}
+            </SheetContent>
+          </Sheet>
+           <h1 className="flex-1 text-lg font-semibold md:text-2xl">
+            {
+              {
+                'period-tracker': 'Period Tracker Dashboard',
+                'hormonal-nutrition': 'Hormonal Nutrition Advisor',
+                'mental-health': 'Mental Health Support',
+                'baby-health': 'Baby Health Tracker',
+              }[activeComponent]
+            }
+          </h1>
+        </header>
+        <main className="flex-1 overflow-auto p-4 md:p-8">
+          {renderComponent()}
+        </main>
+      </div>
     </div>
   );
 }
