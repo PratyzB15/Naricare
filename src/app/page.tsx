@@ -1,33 +1,64 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { Flower2, Heart } from 'lucide-react';
 
 export default function WelcomePage() {
-    const router = useRouter();
-
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="text-center p-8 max-w-lg mx-auto">
-                <h1 className="text-5xl font-bold text-primary-foreground mb-4">Welcome to HerHealthAI</h1>
-                <p className="text-lg text-muted-foreground mb-8">
-                    Your personal AI companion for menstrual health, wellness, and beyond.
+        <div className="min-h-screen bg-background">
+          <section className="bg-secondary/50 py-12 sm:py-20 lg:py-28">
+            <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6 text-center lg:text-left">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter">
+                  Your Health, <br />
+                  <span className="text-pink-500">Your Priority</span>
+                </h1>
+                <p className="max-w-md mx-auto lg:mx-0 text-muted-foreground md:text-lg">
+                  Comprehensive women's health tracking with period monitoring, fertility insights, and personalized wellness guidance - designed for every woman, everywhere.
                 </p>
-                <div className="space-x-4">
-                    <button 
-                        onClick={() => router.push('/signup')}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105"
-                    >
-                        Get Started
-                    </button>
-                    <button
-                        onClick={() => router.push('/signin')}
-                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105"
-                    >
-                        Sign In
-                    </button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                  <Button asChild size="lg" className="bg-pink-400/80 text-white hover:bg-pink-400">
+                    <Link href="/signup">Start Tracking Today</Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                     <Link href="/signin">Sign In</Link>
+                  </Button>
                 </div>
+                <div className="flex justify-center lg:justify-start gap-8 pt-4">
+                    <div>
+                        <p className="font-bold text-pink-500 text-lg">24/7</p>
+                        <p className="text-sm text-muted-foreground">Support</p>
+                    </div>
+                     <div>
+                        <p className="font-bold text-green-500 text-lg">100+</p>
+                        <p className="text-sm text-muted-foreground">Languages</p>
+                    </div>
+                     <div>
+                        <p className="font-bold text-blue-500 text-lg">Safe</p>
+                        <p className="text-sm text-muted-foreground">& Secure</p>
+                    </div>
+                </div>
+              </div>
+              <div className="relative">
+                 <Image
+                    src="https://placehold.co/600x400.png"
+                    width={600}
+                    height={400}
+                    alt="Women's Health"
+                    className="rounded-xl shadow-2xl"
+                    data-ai-hint="happy women group"
+                 />
+                 <div className="absolute -top-4 -right-4 bg-white p-3 rounded-full shadow-lg">
+                    <Flower2 className="text-pink-400 h-6 w-6"/>
+                 </div>
+                 <div className="absolute -bottom-6 left-10 bg-white p-3 rounded-full shadow-lg">
+                    <Heart className="text-green-400 h-6 w-6"/>
+                 </div>
+              </div>
             </div>
+          </section>
         </div>
     );
 }
