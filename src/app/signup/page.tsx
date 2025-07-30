@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from '@/components/ui/textarea';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function SignUpPage() {
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement actual sign-up logic with Firebase Auth
+    // and store user age and medical history
     console.log('Signing up...');
     router.push('/dashboard');
   };
@@ -45,11 +47,23 @@ export default function SignUpPage() {
               </RadioGroup>
             </div>
             
-            {userType === 'family' && (
+            {userType === 'family' ? (
               <div className="space-y-2">
                 <Label htmlFor="uniqueId">Female User's Unique ID</Label>
                 <Input id="uniqueId" type="text" placeholder="Enter the user's unique ID to track" required />
               </div>
+            ) : (
+                <>
+                 <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input id="age" type="number" placeholder="Your age" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="medicalHistory">Pre-existing Conditions (optional)</Label>
+                    <Textarea id="medicalHistory" placeholder="e.g., Thyroid, PCOS" />
+                    <p className="text-xs text-muted-foreground">This helps us personalize your predictions.</p>
+                  </div>
+                </>
             )}
 
             <div className="space-y-2">

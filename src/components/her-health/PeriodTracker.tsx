@@ -6,17 +6,31 @@ import { addDays, differenceInDays, formatISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
-import type { PeriodPrediction } from '@/components/her-health/PeriodPredictionCard';
 import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
 import type { Medication } from '@/components/her-health/MedicationReminderCard';
 import { predictPeriodAction } from '@/app/actions';
+import { AlertTriangle, HeartPulse, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+
+export type PeriodCycle = { start: Date; end: Date };
+
+export type PeriodPrediction = {
+  predictedStartDate: string;
+  confidence: number;
+  reasoning: string;
+  healthAnalysis?: string;
+};
+
 
 export function PeriodTracker() {
   const { toast } = useToast();
   const [isPredicting, startPredictionTransition] = useTransition();
 
+  // These would be loaded from a user's profile
+  const [userProfile] = useState({ age: 30, medicalHistory: 'None' }); 
+
   // Start with empty state for a new user
-  const [cycles, setCycles] = useState<{ start: Date; end: Date }[]>([]);
+  const [cycles, setCycles] = useState<PeriodCycle[]>([]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
 
@@ -36,14 +50,22 @@ export function PeriodTracker() {
     }
   }, [prediction, toast]);
 
-  const handlePrediction = (newCycles: { start: Date; end: Date }[]) => {
+  const handlePrediction = (newCycles: PeriodCycle[]) => {
+    if(newCycles.length === 0) return;
+
     startPredictionTransition(async () => {
       try {
-        const pastCycleData = newCycles.map(c => formatISO(c.start, { representation: 'date' }));
+        const pastCycleData = newCycles.map(c => ({
+            start: formatISO(c.start, { representation: 'date' }),
+            end: formatISO(c.end, { representation: 'date' }),
+        }));
+
         const result = await predictPeriodAction({
           pastCycleData,
           mood: 'calm', // Default values for auto-prediction
           physicalSymptoms: 'None',
+          age: userProfile.age,
+          medicalHistory: userProfile.medicalHistory
         });
         setPrediction(result);
         toast({
@@ -77,6 +99,10 @@ export function PeriodTracker() {
     }
   };
 
+  const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
+  const cycleHistory = cycles.slice(-2);
+
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
       <div className="lg:col-span-4">
@@ -87,7 +113,57 @@ export function PeriodTracker() {
         />
       </div>
       <div className="lg:col-span-3 flex flex-col gap-4">
-        <CyclePhaseCard lastCycleStart={cycles.length > 0 ? cycles[cycles.length - 1].start : undefined} />
+        
+        {prediction?.healthAnalysis && (
+            <Card className="border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle />
+                        Health Analysis
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-destructive">{prediction.healthAnalysis}</p>
+                </CardContent>
+            </Card>
+        )}
+
+        {prediction && !prediction.healthAnalysis && (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <HeartPulse />
+                        Prediction Details
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <p><strong>Reasoning:</strong> {prediction.reasoning}</p>
+                    <p><strong>Confidence:</strong> {Math.round(prediction.confidence * 100)}%</p>
+                </CardContent>
+            </Card>
+        )}
+
+        {cycleHistory.length > 0 && (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                       <Info />
+                        Cycle History
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ul className="space-y-2 text-sm">
+                        {cycleHistory.map((cycle, index) => (
+                             <li key={index}>
+                                {`Month ${index + 1}: ${cycle.start.toLocaleDateString()} - ${cycle.end.toLocaleDateString()}`}
+                            </li>
+                        ))}
+                    </ul>
+                </CardContent>
+            </Card>
+        )}
+
+        <CyclePhaseCard lastCycleStart={lastCycle?.start} />
         <MedicationReminderCard
           medications={medications}
           setMedications={setMedications}
