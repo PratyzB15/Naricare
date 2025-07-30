@@ -40,7 +40,7 @@ export default function SignUpPage() {
                 <Label 
                   htmlFor="self"
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground",
+                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
                     userType === 'self' && "border-blue-500"
                   )}
                 >
@@ -50,7 +50,7 @@ export default function SignUpPage() {
                 <Label 
                    htmlFor="family"
                    className={cn(
-                     "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground",
+                     "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
                      userType === 'family' && "border-blue-500"
                    )}
                 >
