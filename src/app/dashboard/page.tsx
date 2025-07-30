@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Video,
   ShoppingBag,
-  CircleHelp,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -34,6 +33,13 @@ const features = [
     icon: Bot,
     href: '/nutrition-lifestyle',
     color: 'text-green-400',
+  },
+  {
+    title: 'Baby Health Tracker',
+    description: 'Track baby\'s growth and health via ultrasound.',
+    icon: Baby,
+    href: '/baby-health-tracker',
+    color: 'text-teal-400',
   },
   {
     title: 'Medical Store',

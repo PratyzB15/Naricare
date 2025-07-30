@@ -1,0 +1,177 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { BrainCircuit, Loader2, Info, Leaf, Utensils } from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { getHormonalNutritionAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
+
+export type HormonalNutritionResult = {
+  recommendations: string;
+};
+
+const formSchema = z.object({
+  cyclePhase: z.string().min(1, 'Please select your cycle phase.'),
+  mood: z.string().optional(),
+  physicalSymptoms: z.string().optional(),
+  dietaryPreferences: z.string().optional(),
+  medicalHistory: z.string().optional(),
+});
+
+export function HormonalNutrition() {
+  const [isPending, startTransition] = useTransition();
+  const [result, setResult] = useState<HormonalNutritionResult | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      cyclePhase: 'menstruation',
+      mood: '',
+      physicalSymptoms: '',
+      dietaryPreferences: '',
+      medicalHistory: '',
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setResult(null);
+    startTransition(async () => {
+      try {
+        const res = await getHormonalNutritionAction(values);
+        setResult(res);
+         toast({
+            title: 'Recommendations Ready!',
+            description: 'AI has generated your personalized nutrition advice.',
+        });
+      } catch (error) {
+        console.error('Failed to get recommendations:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to Get Advice',
+            description: 'Could not get recommendations at this time. Please try again later.',
+        });
+      }
+    });
+  };
+
+  return (
+    <Card className="shadow-md">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-2xl">
+          <Leaf />
+          Hormonal Nutrition Advisor
+        </CardTitle>
+        <CardDescription>
+          Get personalized diet & lifestyle advice based on your hormonal cycle.
+        </CardDescription>
+      </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="cyclePhase"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Cycle Phase</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a phase" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="menstruation">Menstruation</SelectItem>
+                      <SelectItem value="follicular">Follicular</SelectItem>
+                      <SelectItem value="ovulation">Ovulation</SelectItem>
+                      <SelectItem value="luteal">Luteal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="mood"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Mood (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Happy, Anxious, Irritable" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="physicalSymptoms"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Physical Symptoms (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="e.g., cramps, bloating, headaches" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="dietaryPreferences"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dietary Preferences (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Vegan, Gluten-free" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="medicalHistory"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Medical History (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., PCOS, Thyroid issues" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Get My Recommendations
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+      {result && (
+        <CardContent className="border-t pt-6">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2"><Utensils /> AI Recommendations</h3>
+          <div className="prose prose-sm max-w-none text-muted-foreground">
+            {result.recommendations.split('\n').map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
