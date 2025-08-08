@@ -11,6 +11,7 @@ import {
   HeartPulse,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { DashboardPeriodCard } from '@/components/her-health/DashboardPeriodCard';
 
 const features = [
   {
@@ -78,22 +79,27 @@ export default function Dashboard() {
         <h1 className="text-4xl font-bold text-primary-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-2">Explore the tools to manage your health.</p>
       </header>
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {features.map((feature) => (
-          <Link href={feature.href} key={feature.title} className="group">
-              <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
-                <CardHeader className="flex flex-row items-start gap-4 p-0">
-                  <div className={`rounded-full p-3 ${feature.bgColor}`}>
-                    <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
-          </Link>
-        ))}
+      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-1">
+          <DashboardPeriodCard />
+        </div>
+        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature) => (
+            <Link href={feature.href} key={feature.title} className="group">
+                <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
+                    <CardHeader className="flex flex-row items-start gap-4 p-0">
+                    <div className={`rounded-full p-3 ${feature.bgColor}`}>
+                        <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
+                    </div>
+                    <div className="flex-1">
+                        <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
+                        <CardDescription>{feature.description}</CardDescription>
+                    </div>
+                    </CardHeader>
+                </Card>
+            </Link>
+            ))}
+        </div>
       </div>
     </div>
   );

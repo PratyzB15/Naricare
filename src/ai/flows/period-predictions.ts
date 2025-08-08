@@ -33,6 +33,7 @@ const PredictPeriodOutputSchema = z.object({
     .describe('A number between 0 and 1 indicating the confidence in the prediction.'),
   reasoning: z.string().describe('The reasoning behind the prediction.'),
   healthAnalysis: z.string().optional().describe('An analysis of menstrual health, including warnings for PCOS/PCOD, irregularities, or menopause based on cycle history, age and medical conditions.'),
+  flowPrediction: z.string().optional().describe('A day-by-day prediction of the menstrual flow (e.g., "Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light").'),
 });
 export type PredictPeriodOutput = z.infer<typeof PredictPeriodOutputSchema>;
 
@@ -63,6 +64,8 @@ const prompt = ai.definePrompt({
     *   **Menopause Detection:** If the user is over 55 and has missed periods for several months, it is likely menopause. Mention this in your analysis.
     *   **Late/On-Time:** Compare the last logged period's start date with the previous prediction (if available in a real app context, for now, just analyze the general trend). Note if periods are generally late or on time.
     *   **Personalization:** Use the \`age\` and \`medicalHistory\` (e.g., Thyroid issues) to make your analysis more accurate and personalized. Thyroid issues can cause irregular periods.
+
+3. **Predict Flow Intensity:** Provide a day-by-day \`flowPrediction\` for the next cycle. A standard pattern is: Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light.
 
 **Output Format:**
 Provide your response in a clear JSON format. If there are no health concerns, the \`healthAnalysis\` can be a simple statement like "Your cycles appear to be regular and healthy."

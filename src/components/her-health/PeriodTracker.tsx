@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { addDays, differenceInDays, formatISO } from 'date-fns';
+import { addDays, differenceInDays, formatISO, subMonths } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
 import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
 import type { Medication } from '@/components/her-health/MedicationReminderCard';
 import { predictPeriodAction } from '@/app/actions';
-import { AlertTriangle, HeartPulse, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { AlertTriangle, HeartPulse, Info, Droplet } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Textarea } from '../ui/textarea';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 
 export type PeriodCycle = { start: Date; end: Date };
 
@@ -19,6 +22,7 @@ export type PeriodPrediction = {
   confidence: number;
   reasoning: string;
   healthAnalysis?: string;
+  flowPrediction?: string;
 };
 
 
@@ -29,26 +33,17 @@ export function PeriodTracker() {
   // These would be loaded from a user's profile
   const [userProfile] = useState({ age: 30, medicalHistory: 'None' }); 
 
-  // Start with empty state for a new user
-  const [cycles, setCycles] = useState<PeriodCycle[]>([]);
+  // Simulate a returning user with some data
+  const [cycles, setCycles] = useState<PeriodCycle[]>([
+    { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
+    { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
+  ]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
-  const [medications, setMedications] = useState<Medication[]>([]);
+  const [medications, setMedications] = useState<Medication[]>([
+      { id: '1', name: 'Iron Supplement', time: '09:00' }
+  ]);
+  const [flowFeedback, setFlowFeedback] = useState('');
 
-  useEffect(() => {
-    if (prediction?.predictedStartDate) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const predictedDate = new Date(prediction.predictedStartDate);
-      const daysUntil = differenceInDays(predictedDate, today);
-
-      if (daysUntil === 2) {
-        toast({
-          title: 'Period Reminder',
-          description: `Your period is predicted to start in 2 days, on ${predictedDate.toLocaleDateString()}.`,
-        });
-      }
-    }
-  }, [prediction, toast]);
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
     if(newCycles.length === 0) return;
@@ -68,16 +63,46 @@ export function PeriodTracker() {
           medicalHistory: userProfile.medicalHistory
         });
         setPrediction(result);
-        toast({
-          title: 'Prediction Updated',
-          description: 'Your next period has been predicted based on your latest cycle.',
-        });
+        if (result) {
+            toast({
+              title: 'Prediction Updated',
+              description: 'Your next period has been predicted based on your latest cycle.',
+            });
+        }
       } catch (error) {
         console.error('Auto-prediction failed:', error);
-        // Silently fail or show a non-intrusive message
+        toast({
+            variant: 'destructive',
+            title: 'Prediction Error',
+            description: 'Could not get prediction at this time. Please try again later.',
+        });
       }
     });
   };
+
+  // Initial prediction on component load
+  useEffect(() => {
+    if(cycles.length > 0) {
+        handlePrediction(cycles);
+    }
+  }, []);
+
+
+  useEffect(() => {
+    if (prediction?.predictedStartDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const predictedDate = new Date(prediction.predictedStartDate);
+      const daysUntil = differenceInDays(predictedDate, today);
+
+      if (daysUntil === 2) {
+        toast({
+          title: 'Period Reminder',
+          description: `Your period is predicted to start in 2 days, on ${predictedDate.toLocaleDateString()}.`,
+        });
+      }
+    }
+  }, [prediction, toast]);
 
   const handleLogPeriod = (range: DateRange | undefined) => {
     if (range?.from && range?.to) {
@@ -124,6 +149,29 @@ export function PeriodTracker() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-destructive">{prediction.healthAnalysis}</p>
+                </CardContent>
+            </Card>
+        )}
+        
+        {prediction?.flowPrediction && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Droplet />
+                        Predicted Flow
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                   <p>{prediction.flowPrediction}</p>
+                   <div className="pt-4">
+                        <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
+                        <Textarea 
+                            placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
+                            value={flowFeedback}
+                            onChange={(e) => setFlowFeedback(e.target.value)}
+                        />
+                        <Button className="mt-2" size="sm">Submit Feedback</Button>
+                   </div>
                 </CardContent>
             </Card>
         )}
