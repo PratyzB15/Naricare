@@ -4,6 +4,7 @@ import { predictPeriod, type PredictPeriodInput } from '@/ai/flows/period-predic
 import { getHormonalCycleNutrition, type HormonalCycleNutritionInput } from '@/ai/flows/hormonal-cycle-nutrition';
 import { mentalHealthChatbot, type MentalHealthChatbotInput } from '@/ai/flows/mental-health-chatbot';
 import { babyHealthTracker, type BabyHealthTrackerInput } from '@/ai/flows/baby-health-tracker';
+import { getPregnancyProgress, type PregnancyProgressInput } from '@/ai/flows/pregnancy-progress';
 
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
@@ -44,5 +45,15 @@ export async function babyHealthTrackerAction(input: BabyHealthTrackerInput) {
     } catch (e) {
         console.error(e);
         throw new Error('Failed to get baby health analysis from AI.');
+    }
+}
+
+export async function getPregnancyProgressAction(input: PregnancyProgressInput) {
+    try {
+        const result = await getPregnancyProgress(input);
+        return result;
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to get pregnancy progress from AI.');
     }
 }

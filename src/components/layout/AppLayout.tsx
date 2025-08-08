@@ -46,9 +46,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       label: 'Mental Health Chatbot',
     },
     {
-      href: '/baby-health-tracker',
+      href: '/pregnancy-baby-tracker',
       icon: Baby,
-      label: 'Baby Health Tracker',
+      label: 'Pregnancy & Baby Tracker',
     },
     {
         href: '/medical-store',
