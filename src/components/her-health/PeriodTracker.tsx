@@ -9,7 +9,7 @@ import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
 import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
 import type { Medication } from '@/components/her-health/MedicationReminderCard';
 import { predictPeriodAction } from '@/app/actions';
-import { AlertTriangle, HeartPulse, Info, Droplet, Pregnant } from 'lucide-react';
+import { AlertTriangle, HeartPulse, Info, Droplet, Baby } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
@@ -172,7 +172,7 @@ export function PeriodTracker() {
         <Card className="lg:col-span-3">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Pregnant /> Pregnancy Mode
+                    <Baby /> Pregnancy Mode
                 </CardTitle>
                 <CardDescription>
                    Period tracking is paused during your pregnancy. You are approximately {Math.floor(pregnancyWeeks)} weeks pregnant.
