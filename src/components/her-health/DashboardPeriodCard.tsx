@@ -90,7 +90,7 @@ export function DashboardPeriodCard() {
             <div>
               <p className="text-sm text-muted-foreground">Recommendation</p>
               <p className="font-medium text-base">
-                {currentPhase === 'menstrual' && 'Focus on rest and gentle exercise. Iron-rich foods are beneficial.'}
+                {currentPhase === 'menstrual' && 'During your menstrual phase, focus on iron-rich foods like spinach and lentils, stay hydrated, and consider foods rich in Vitamin C like oranges to help with iron absorption. Magnesium from nuts and seeds can help with cramps.'}
                 {currentPhase === 'follicular' && "Your energy is rising! It's a great time for creative projects and socializing."}
                 {currentPhase === 'ovulatory' && "You're at your peak! A good time for important meetings or high-intensity workouts."}
                 {currentPhase === 'luteal' && 'Listen to your body. Prioritize self-care and calming activities.'}
