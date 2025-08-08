@@ -8,10 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarTrigger,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import {
   Baby,
@@ -21,10 +18,10 @@ import {
   Home,
   ShoppingBag,
   Video,
+  User,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '../ui/button';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -71,7 +68,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="text-lg font-semibold">HerHealthAI</span>
             </div>
           </SidebarHeader>
-          <SidebarMenu>
+          <SidebarMenu className="flex-1">
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -99,6 +96,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
+           <SidebarFooter>
+              <SidebarMenu>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === '/profile'}
+                      tooltip={{ children: 'Profile' }}
+                    >
+                      <Link href="/profile">
+                        <User />
+                        <span>Profile</span>
+                      </Link>
+                    </SidebarMenuButton>
+                 </SidebarMenuItem>
+              </SidebarMenu>
+           </SidebarFooter>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>

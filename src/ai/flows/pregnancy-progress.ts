@@ -31,9 +31,51 @@ const prompt = ai.definePrompt({
   output: {schema: PregnancyProgressOutputSchema},
   prompt: `You are an expert in embryology and fetal development.
 
-  Based on the number of pregnancy weeks provided, generate a detailed, easy-to-understand description of the baby's development. Include information about which organs have formed, the approximate size of the fetus, and key developmental milestones for that week.
+Based on the number of pregnancy weeks provided ({{{pregnancyWeeks}}}), generate a detailed, easy-to-understand description of the baby's development for that specific week. Use the following data as your source of truth.
 
-  Pregnancy Weeks: {{{pregnancyWeeks}}}
+**Fetal Development Data by Week:**
+
+*   **Week 1–2**: Before conception. Pregnancy is counted from the first day of your last menstrual period. Baby: No fetus yet; the egg is maturing. Mother: Hormonal changes prepare the uterus.
+*   **Week 3**: Conception. Sperm fertilizes egg -> zygote -> blastocyst. Baby: Starts traveling toward uterus; early cell division begins.
+*   **Week 4**: Implantation. Baby: Implants in uterine wall; forms amniotic sac and placenta. Size: poppy seed. Organs: Neural tube (future brain & spinal cord) starts forming.
+*   **Week 5**: Heart beat begins. Baby: Heart tube starts beating. Organs: Major organs begin blueprinting. Brain: First primitive brain vesicles appear.
+*   **Week 6**: Features emerge. Baby: Eyes, ears, and limb buds visible. Heart rate detectable on ultrasound (~100–120 bpm).
+*   **Week 7**: Rapid growth. Baby: Facial features begin; arms/legs elongate. Brain: Rapid neuron growth; first synapses form.
+*   **Week 8**: All major organs present. Baby: Fingers/toes start separating; bones begin forming. Organs: All major organs have a basic structure.
+*   **Week 9**: Becoming human-like. Baby: Tail disappears. Brain: Cerebellum development starts (motor control).
+*   **Week 10**: Genitals form. Baby: Genitals begin differentiating. Organs: Liver produces red blood cells; kidneys start forming urine.
+*   **Week 11**: Details develop. Baby: Nails, tooth buds form; skin transparent. Brain: Spinal cord fully closed; reflexes start.
+*   **Week 12**: End of first trimester. Baby: All organ systems formed, now start maturing. Risk of miscarriage drops significantly.
+*   **Week 13**: Baby can swallow. Baby: Vocal cords form; baby can swallow amniotic fluid.
+*   **Week 14**: Facial expressions. Baby: Facial muscles allow frowning/squinting. Brain: Nerve cells forming complex networks.
+*   **Week 15**: Hearing begins. Baby: Hearing begins; bones harden.
+*   **Week 16**: Movement. Baby: Movements stronger. Mother: “Quickening” (first movements) may be felt.
+*   **Week 17**: Fat stores form. Baby: Fat stores start forming under skin.
+*   **Week 18**: Hearing is developed. Baby: Ears fully formed; can hear heartbeat and outside sounds. Brain: Myelination begins (faster nerve communication).
+*   **Week 19**: Protective coating. Baby: Vernix (protective wax) covers skin.
+*   **Week 20**: Halfway point. Baby: Senses developing rapidly. Ultrasound can reveal gender.
+*   **Week 21**: Taste buds function. Baby: Taste buds functional.
+*   **Week 22**: Eyelids and eyebrows. Baby: Eyelids & eyebrows fully formed. Brain: Rapid sensory brain growth.
+*   **Week 23**: Responds to touch. Baby: Can respond to touch and sound.
+*   **Week 24**: Viability. Baby: Lungs producing surfactant (needed for breathing after birth).
+*   **Week 25**: Skin pinker. Baby: Skin pinker; fat deposits continue.
+*   **Week 26**: Eyes open. Baby: Eyes begin opening; can see light/dark. Brain: Awareness increases; basic sleep–wake cycles begin.
+*   **Week 27**: Breathing practice. Baby: Stronger breathing movements in preparation for life outside.
+*   **Week 28**: Dreaming. Baby: Brain activity shows REM sleep -> dreams possible.
+*   **Week 29**: Muscles strengthen. Baby: Muscles stronger; can grip. Brain: Massive increase in folds and complexity.
+*   **Week 30**: Can track movement. Baby: Eyes can track movement; may respond to music.
+*   **Week 31**: Nervous system control. Baby: Nervous system controlling more body functions.
+*   **Week 32**: Gaining weight. Baby: Bones fully formed but soft; gaining ~200g/week.
+*   **Week 33**: Immune system develops. Baby: Immune system developing.
+*   **Week 34**: Head down. Baby: More coordinated movements; head may turn downward. Brain: Higher brain functions increasing.
+*   **Week 35**: Getting plump. Baby: Skin smooth, fat layers well-developed.
+*   **Week 36**: Organs maturing. Baby: Organs almost fully mature except lungs.
+*   **Week 37**: Early term. Baby: Considered “early term” — ready for birth anytime.
+*   **Week 38**: Ready for birth. Baby: Lungs fully ready; shedding vernix and lanugo.
+*   **Week 39**: Fully mature. Baby: Fully mature; brain still growing rapidly.
+*   **Week 40**: Due date. Baby: Most weigh 2.8–4 kg.
+
+Provide a response only for the requested week ({{{pregnancyWeeks}}}).
 `,
 });
 

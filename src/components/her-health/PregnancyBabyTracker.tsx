@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { babyHealthTrackerAction, getPregnancyProgressAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { differenceInDays } from 'date-fns';
 
 export type UltrasoundAnalysis = {
   babySizeEstimate: string;
@@ -27,11 +28,11 @@ export type PregnancyProgress = {
 const formSchema = z.object({
   pregnancyWeeks: z.coerce.number().min(1, 'Please enter pregnancy weeks.').max(42, 'Please enter valid pregnancy weeks.'),
   additionalNotes: z.string().optional(),
-  ultrasoundImage: z.custom<File>((val) => val instanceof File, 'Please upload an ultrasound image.').refine(
-    (file) => file.size < 4 * 1024 * 1024, // 4MB
+  ultrasoundImage: z.custom<File>((val) => val instanceof File, 'Please upload an ultrasound image.').optional().refine(
+    (file) => !file || file.size < 4 * 1024 * 1024, // 4MB
     'Image size should be less than 4MB.'
   ).refine(
-    (file) => ['image/jpeg', 'image/png'].includes(file.type),
+    (file) => !file || ['image/jpeg', 'image/png'].includes(file.type),
     'Only .jpg and .png formats are supported.'
   ),
 });
@@ -46,25 +47,49 @@ export function PregnancyBabyTracker() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      pregnancyWeeks: undefined,
+      pregnancyWeeks: 0,
       additionalNotes: '',
+      ultrasoundImage: undefined,
     },
   });
   
   const pregnancyWeeks = form.watch('pregnancyWeeks');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const savedPregnancy = localStorage.getItem('pregnancyStartDate');
+    if (savedPregnancy) {
+        const startDate = new Date(savedPregnancy);
+        const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
+        form.setValue('pregnancyWeeks', weeks > 0 ? weeks : 1);
+    }
+  }, [form]);
+
 
   useEffect(() => {
     if (pregnancyWeeks >= 1 && pregnancyWeeks <= 42) {
+        setProgressResult(null);
         startTransition(async () => {
              try {
                 const result = await getPregnancyProgressAction({ pregnancyWeeks });
                 setProgressResult(result);
+                
+                const today = new Date();
+                const startDate = new Date(today.setDate(today.getDate() - (pregnancyWeeks * 7)));
+                localStorage.setItem('pregnancyStartDate', startDate.toISOString());
+
              } catch (error) {
                  console.error("Failed to get pregnancy progress", error);
+                 toast({
+                    variant: 'destructive',
+                    title: 'Development Info Error',
+                    description: 'Could not fetch fetal development details at this time.',
+                });
              }
         })
     }
-  }, [pregnancyWeeks]);
+  }, [pregnancyWeeks, toast]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -89,10 +114,19 @@ export function PregnancyBabyTracker() {
 
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!values.ultrasoundImage) {
+        toast({
+            variant: 'destructive',
+            title: 'Ultrasound Image Required',
+            description: 'Please upload an ultrasound image to get an analysis.',
+        });
+        return;
+    }
+
     setAnalysisResult(null);
     startTransition(async () => {
       try {
-        const ultrasoundImageDataUri = await fileToBase64(values.ultrasoundImage);
+        const ultrasoundImageDataUri = await fileToBase64(values.ultrasoundImage!);
         
         const result = await babyHealthTrackerAction({
           pregnancyWeeks: values.pregnancyWeeks,
@@ -114,6 +148,8 @@ export function PregnancyBabyTracker() {
       }
     });
   };
+
+  if (!isClient) return null;
 
   return (
     <div className="container mx-auto py-8">
@@ -138,36 +174,32 @@ export function PregnancyBabyTracker() {
                     <FormItem>
                       <FormLabel>Pregnancy Duration (in weeks)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 20" {...field} />
+                        <Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="additionalNotes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Additional Notes (optional)</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Any specific concerns or notes from your doctor..." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
+                <div className="p-4 rounded-lg bg-secondary/50 space-y-2 min-h-[150px]">
+                    <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {pregnancyWeeks || ''}: Fetal Development</h4>
+                    {isPending && !progressResult && <Loader2 className="h-5 w-5 animate-spin" />}
+                    {progressResult && <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.fetalDevelopment}</p>}
+                    {!isPending && !progressResult && pregnancyWeeks > 0 && <p className="text-sm text-muted-foreground">Could not load data.</p>}
+                     {!isPending && !progressResult && !pregnancyWeeks && <p className="text-sm text-muted-foreground">Enter a week to see development details.</p>}
+                </div>
+
                  <FormField
                   control={form.control}
                   name="ultrasoundImage"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ultrasound Image</FormLabel>
+                      <FormLabel>Ultrasound Image (Optional)</FormLabel>
                       <FormControl>
                         <div className="relative border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
                           <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
                           <p className="mt-2 text-sm text-muted-foreground">
-                            Drag & drop or click to upload
+                            Drag & drop or click to upload for AI analysis
                           </p>
                            <Input 
                             type="file" 
@@ -201,12 +233,11 @@ export function PregnancyBabyTracker() {
               </div>
 
               <div className="space-y-4">
-                  {progressResult && (
-                    <div className="p-4 rounded-lg bg-secondary space-y-2">
-                        <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {pregnancyWeeks}: Fetal Development</h4>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{progressResult.fetalDevelopment}</p>
+                 {isPending && !analysisResult && (
+                    <div className="flex items-center justify-center h-full">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  )}
+                 )}
 
                  {analysisResult && (
                     <div className="space-y-4 pt-4">
@@ -227,7 +258,20 @@ export function PregnancyBabyTracker() {
                  )}
               </div>
             </CardContent>
-            <CardFooter className="flex justify-end border-t pt-6">
+            <CardFooter className="flex-col items-end gap-4 border-t pt-6">
+                <FormField
+                  control={form.control}
+                  name="additionalNotes"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>Additional Notes for Ultrasound Analysis (optional)</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Any specific concerns or notes from your doctor..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <Button type="submit" disabled={isPending || !preview}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Analyze Ultrasound

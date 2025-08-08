@@ -10,21 +10,35 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [userType, setUserType] = useState('self');
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Implement actual sign-up logic with Firebase Auth
-    // and store user age and medical history
-    console.log('Signing up...');
+    const formData = new FormData(e.currentTarget);
+    
+    if (userType === 'self') {
+        const age = formData.get('age') as string;
+        const medicalHistory = formData.get('medicalHistory') as string;
+        
+        // In a real app, this would be saved to a database.
+        // For this prototype, we'll use localStorage.
+        localStorage.setItem('userProfile', JSON.stringify({ age: parseInt(age, 10), medicalHistory }));
+    }
+
+    toast({
+        title: 'Account Created!',
+        description: 'You have successfully signed up.',
+    });
     router.push('/dashboard');
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background py-8 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-background px-4">
       <Card className="w-full max-w-md p-2">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
@@ -63,17 +77,17 @@ export default function SignUpPage() {
             {userType === 'family' ? (
               <div className="space-y-2">
                 <Label htmlFor="uniqueId" className="font-semibold">Female User's Unique ID</Label>
-                <Input id="uniqueId" type="text" placeholder="Enter the user's unique ID to track" required />
+                <Input id="uniqueId" name="uniqueId" type="text" placeholder="Enter the user's unique ID to track" required />
               </div>
             ) : (
                 <>
                  <div className="space-y-2">
                     <Label htmlFor="age" className="font-semibold">Age</Label>
-                    <Input id="age" type="number" placeholder="Your age" required />
+                    <Input id="age" name="age" type="number" placeholder="Your age" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="medicalHistory" className="font-semibold">Pre-existing Conditions (optional)</Label>
-                    <Textarea id="medicalHistory" placeholder="e.g., Thyroid, PCOS" />
+                    <Textarea id="medicalHistory" name="medicalHistory" placeholder="e.g., Thyroid, PCOS" />
                     <p className="text-xs text-muted-foreground">This helps us personalize your predictions.</p>
                   </div>
                 </>
@@ -81,12 +95,12 @@ export default function SignUpPage() {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="font-semibold">Email</Label>
-              <Input id="email" type="email" placeholder="name@example.com" required />
+              <Input id="email" name="email" type="email" placeholder="name@example.com" required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password"  className="font-semibold">Password</Label>
-              <Input id="password" type="password" required />
+              <Input id="password" name="password" type="password" required />
             </div>
 
             <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-base py-6">

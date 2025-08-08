@@ -9,7 +9,7 @@ import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
 import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
 import type { Medication } from '@/components/her-health/MedicationReminderCard';
 import { predictPeriodAction } from '@/app/actions';
-import { AlertTriangle, HeartPulse, Info, Droplet } from 'lucide-react';
+import { AlertTriangle, HeartPulse, Info, Droplet, Pregnant } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
@@ -25,35 +25,65 @@ export type PeriodPrediction = {
   flowPrediction?: string;
 };
 
-
 export function PeriodTracker() {
   const { toast } = useToast();
   const [isPredicting, startPredictionTransition] = useTransition();
-
-  // These would be loaded from a user's profile
-  const [userProfile] = useState({ age: 30, medicalHistory: 'None' }); 
+  const [userProfile, setUserProfile] = useState({ age: 30, medicalHistory: 'None' }); 
   const [isClient, setIsClient] = useState(false);
-
-  // Simulate a returning user with some data
   const [cycles, setCycles] = useState<PeriodCycle[]>([]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
   const [flowFeedback, setFlowFeedback] = useState('');
+  const [pregnancyStartDate, setPregnancyStartDate] = useState<Date | null>(null);
 
   useEffect(() => {
     setIsClient(true);
-    // Initialize data on client-side to avoid hydration mismatch
-    setCycles([
-      { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
-      { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
-    ]);
-    setMedications([
-      { id: '1', name: 'Iron Supplement', time: '09:00' }
-    ]);
+    // Load data from localStorage to simulate a logged-in user
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      setUserProfile(JSON.parse(savedProfile));
+    }
+    const savedCycles = localStorage.getItem('periodCycles');
+    if (savedCycles) {
+      const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ start: new Date(c.start), end: new Date(c.end) }));
+      setCycles(parsedCycles);
+    } else {
+        // Initialize with some default data if nothing is saved
+        setCycles([
+            { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
+            { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
+        ]);
+    }
+    
+    const savedMeds = localStorage.getItem('medications');
+    if (savedMeds) {
+        setMedications(JSON.parse(savedMeds));
+    } else {
+        setMedications([{ id: '1', name: 'Iron Supplement', time: '09:00' }]);
+    }
+    
+    const savedPregnancy = localStorage.getItem('pregnancyStartDate');
+    if (savedPregnancy) {
+        setPregnancyStartDate(new Date(savedPregnancy));
+    }
+
   }, []);
 
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (!isClient) return;
+    localStorage.setItem('periodCycles', JSON.stringify(cycles));
+    localStorage.setItem('medications', JSON.stringify(medications));
+    if (prediction) {
+      localStorage.setItem('periodPrediction', JSON.stringify(prediction));
+    }
+    if (pregnancyStartDate) {
+        localStorage.setItem('pregnancyStartDate', pregnancyStartDate.toISOString());
+    }
+  }, [cycles, medications, prediction, pregnancyStartDate, isClient]);
+
   const handlePrediction = (newCycles: PeriodCycle[]) => {
-    if(newCycles.length === 0) return;
+    if(newCycles.length === 0 || pregnancyStartDate) return;
 
     startPredictionTransition(async () => {
       try {
@@ -64,7 +94,7 @@ export function PeriodTracker() {
 
         const result = await predictPeriodAction({
           pastCycleData,
-          mood: 'calm', // Default values for auto-prediction
+          mood: 'calm',
           physicalSymptoms: 'None',
           age: userProfile.age,
           medicalHistory: userProfile.medicalHistory
@@ -87,14 +117,12 @@ export function PeriodTracker() {
     });
   };
 
-  // Initial prediction on component load, only runs on client after cycles are set
   useEffect(() => {
-    if(cycles.length > 0) {
+    if(isClient && cycles.length > 0) {
         handlePrediction(cycles);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cycles]); // Depend on cycles state
-
+  }, [cycles, isClient]);
 
   useEffect(() => {
     if (prediction?.predictedStartDate) {
@@ -121,7 +149,6 @@ export function PeriodTracker() {
         title: 'Cycle Logged',
         description: `Your period from ${range.from.toLocaleDateString()} to ${range.to.toLocaleDateString()} has been logged.`,
       });
-      // Trigger prediction automatically
       handlePrediction(updatedCycles);
     } else {
       toast({
@@ -136,7 +163,27 @@ export function PeriodTracker() {
   const cycleHistory = cycles.slice(-2);
 
   if (!isClient) {
-      return null; // or a loading skeleton
+      return null;
+  }
+  
+  if (pregnancyStartDate) {
+      const pregnancyWeeks = differenceInDays(new Date(), pregnancyStartDate) / 7;
+      return (
+        <Card className="lg:col-span-3">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Pregnant /> Pregnancy Mode
+                </CardTitle>
+                <CardDescription>
+                   Period tracking is paused during your pregnancy. You are approximately {Math.floor(pregnancyWeeks)} weeks pregnant.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p>Congratulations! Your period tracker is paused. Head over to the Pregnancy & Baby Tracker for weekly updates on your baby's development.</p>
+                <Button className="mt-4" onClick={() => setPregnancyStartDate(null)}>End Pregnancy</Button>
+            </CardContent>
+        </Card>
+      );
   }
 
   return (
