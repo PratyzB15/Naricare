@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { babyHealthTrackerAction, getPregnancyProgressAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 export type UltrasoundAnalysis = {
   babySizeEstimate: string;
@@ -38,11 +39,13 @@ const formSchema = z.object({
 });
 
 export function PregnancyBabyTracker() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [analysisResult, setAnalysisResult] = useState<UltrasoundAnalysis | null>(null);
   const [progressResult, setProgressResult] = useState<PregnancyProgress | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,17 +61,24 @@ export function PregnancyBabyTracker() {
 
   useEffect(() => {
     setIsClient(true);
-    const savedPregnancy = localStorage.getItem('pregnancyStartDate');
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+      return;
+    }
+    setCurrentUserEmail(email);
+
+    const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
     if (savedPregnancy) {
         const startDate = new Date(savedPregnancy);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         form.setValue('pregnancyWeeks', weeks > 0 ? weeks : 1);
     }
-  }, [form]);
+  }, [form, router]);
 
 
   useEffect(() => {
-    if (pregnancyWeeks >= 1 && pregnancyWeeks <= 42) {
+    if (pregnancyWeeks >= 1 && pregnancyWeeks <= 42 && currentUserEmail) {
         setProgressResult(null);
         startTransition(async () => {
              try {
@@ -77,7 +87,7 @@ export function PregnancyBabyTracker() {
                 
                 const today = new Date();
                 const startDate = new Date(today.setDate(today.getDate() - (pregnancyWeeks * 7)));
-                localStorage.setItem('pregnancyStartDate', startDate.toISOString());
+                localStorage.setItem(`${currentUserEmail}_pregnancyStartDate`, startDate.toISOString());
 
              } catch (error) {
                  console.error("Failed to get pregnancy progress", error);
@@ -89,7 +99,8 @@ export function PregnancyBabyTracker() {
              }
         })
     }
-  }, [pregnancyWeeks, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pregnancyWeeks, toast, currentUserEmail]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

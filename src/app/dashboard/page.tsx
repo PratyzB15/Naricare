@@ -9,9 +9,23 @@ import {
   Video,
   ShoppingBag,
   HeartPulse,
+  User,
+  LogOut,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DashboardPeriodCard } from '@/components/her-health/DashboardPeriodCard';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 const features = [
   {
@@ -73,32 +87,75 @@ const features = [
 ];
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+    } else {
+      setCurrentUserEmail(email);
+    }
+  }, [router]);
+
+  const handleSignOut = () => {
+    // In a real app, you'd clear tokens, etc.
+    localStorage.removeItem('currentUserEmail');
+    toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
+    router.push('/');
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <header className="mb-10 text-center">
-        <h1 className="text-4xl font-bold text-primary-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Explore the tools to manage your health.</p>
+      <header className="mb-10 flex justify-between items-center">
+        <div className="text-center flex-1">
+          <h1 className="text-4xl font-bold text-primary-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Explore the tools to manage your health.</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <User className="h-6 w-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sign Out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1">
           <DashboardPeriodCard />
         </div>
         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-            {features.map((feature) => (
+          {features.map((feature) => (
             <Link href={feature.href} key={feature.title} className="group">
-                <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
-                    <CardHeader className="flex flex-row items-start gap-4 p-0">
-                    <div className={`rounded-full p-3 ${feature.bgColor}`}>
-                        <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
-                    </div>
-                    <div className="flex-1">
-                        <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
-                        <CardDescription>{feature.description}</CardDescription>
-                    </div>
-                    </CardHeader>
-                </Card>
+              <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
+                <CardHeader className="flex flex-row items-start gap-4 p-0">
+                  <div className={`rounded-full p-3 ${feature.bgColor}`}>
+                    <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </div>
+                </CardHeader>
+              </Card>
             </Link>
-            ))}
+          ))}
         </div>
       </div>
     </div>

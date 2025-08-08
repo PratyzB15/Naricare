@@ -11,31 +11,74 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [userType, setUserType] = useState('self');
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
+  
+  const generateUniqueId = () => {
+    const randomNumber = Math.floor(1000 + Math.random() * 9000);
+    return `HER_${randomNumber}`;
+  }
 
   const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
     
     if (userType === 'self') {
         const age = formData.get('age') as string;
         const medicalHistory = formData.get('medicalHistory') as string;
         
         // In a real app, this would be saved to a database.
-        // For this prototype, we'll use localStorage.
-        localStorage.setItem('userProfile', JSON.stringify({ age: parseInt(age, 10), medicalHistory }));
+        // For this prototype, we'll use localStorage, namespaced by email.
+        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ age: parseInt(age, 10), medicalHistory }));
+        
+        const newId = generateUniqueId();
+        setUniqueId(newId);
+        localStorage.setItem(`${email}_uniqueId`, newId);
     }
+
+    localStorage.setItem('currentUserEmail', email);
 
     toast({
         title: 'Account Created!',
-        description: 'You have successfully signed up.',
+        description: 'You will be redirected to the dashboard.',
     });
-    router.push('/dashboard');
+    
+    // We show the unique ID and then redirect.
+    setTimeout(() => {
+        router.push('/dashboard');
+    }, 3000);
   };
+
+  if (uniqueId) {
+      return (
+          <div className="flex items-center justify-center min-h-screen bg-background px-4">
+              <Card className="w-full max-w-md p-6">
+                <CardHeader>
+                    <CardTitle>Welcome to HerHealthAI!</CardTitle>
+                    <CardDescription>Your account has been created successfully.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Alert>
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle>Your Unique ID</AlertTitle>
+                        <AlertDescription>
+                            Please save this ID. You can use it to log in or share it with family members to track your health.
+                            <p className="font-bold text-lg mt-2">{uniqueId}</p>
+                        </AlertDescription>
+                    </Alert>
+                     <p className="text-sm text-muted-foreground mt-4 text-center">Redirecting you to the dashboard...</p>
+                </CardContent>
+              </Card>
+          </div>
+      )
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background px-4">

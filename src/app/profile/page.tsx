@@ -21,25 +21,33 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile>({ age: null, medicalHistory: '' });
   const [isClient, setIsClient] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
-    const savedProfile = localStorage.getItem('userProfile');
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+      return;
+    }
+    setCurrentUserEmail(email);
+    const savedProfile = localStorage.getItem(`${email}_userProfile`);
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
     }
-  }, []);
+  }, [router]);
 
   const handleSignOut = () => {
     // In a real app, you'd clear tokens, etc.
-    localStorage.clear();
+    localStorage.removeItem('currentUserEmail');
     toast({ title: 'Signed Out', description: 'You have been successfully signed out.' });
     router.push('/');
   };
   
   const handleSave = (e: React.FormEvent) => {
       e.preventDefault();
-      localStorage.setItem('userProfile', JSON.stringify(profile));
+      if (!currentUserEmail) return;
+      localStorage.setItem(`${currentUserEmail}_userProfile`, JSON.stringify(profile));
       toast({ title: 'Profile Saved', description: 'Your information has been updated.' });
   }
 

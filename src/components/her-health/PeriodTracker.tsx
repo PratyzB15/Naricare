@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { addDays, differenceInDays, formatISO, subMonths } from 'date-fns';
+import { addDays, differenceInDays, formatISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { useRouter } from 'next/navigation';
 
 export type PeriodCycle = { start: Date; end: Date };
 
@@ -26,10 +27,13 @@ export type PeriodPrediction = {
 };
 
 export function PeriodTracker() {
+  const router = useRouter();
   const { toast } = useToast();
   const [isPredicting, startPredictionTransition] = useTransition();
-  const [userProfile, setUserProfile] = useState({ age: 30, medicalHistory: 'None' }); 
+  const [userProfile, setUserProfile] = useState({ age: null, medicalHistory: '' }); 
   const [isClient, setIsClient] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
   const [cycles, setCycles] = useState<PeriodCycle[]>([]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -38,49 +42,50 @@ export function PeriodTracker() {
 
   useEffect(() => {
     setIsClient(true);
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+      return;
+    }
+    setCurrentUserEmail(email);
+
     // Load data from localStorage to simulate a logged-in user
-    const savedProfile = localStorage.getItem('userProfile');
+    const savedProfile = localStorage.getItem(`${email}_userProfile`);
     if (savedProfile) {
       setUserProfile(JSON.parse(savedProfile));
     }
-    const savedCycles = localStorage.getItem('periodCycles');
+    const savedCycles = localStorage.getItem(`${email}_periodCycles`);
     if (savedCycles) {
       const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ start: new Date(c.start), end: new Date(c.end) }));
       setCycles(parsedCycles);
-    } else {
-        // Initialize with some default data if nothing is saved
-        setCycles([
-            { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
-            { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
-        ]);
     }
     
-    const savedMeds = localStorage.getItem('medications');
+    const savedMeds = localStorage.getItem(`${email}_medications`);
     if (savedMeds) {
         setMedications(JSON.parse(savedMeds));
-    } else {
-        setMedications([{ id: '1', name: 'Iron Supplement', time: '09:00' }]);
     }
     
-    const savedPregnancy = localStorage.getItem('pregnancyStartDate');
+    const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
     if (savedPregnancy) {
         setPregnancyStartDate(new Date(savedPregnancy));
     }
 
-  }, []);
+  }, [router]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (!isClient) return;
-    localStorage.setItem('periodCycles', JSON.stringify(cycles));
-    localStorage.setItem('medications', JSON.stringify(medications));
+    if (!isClient || !currentUserEmail) return;
+    localStorage.setItem(`${currentUserEmail}_periodCycles`, JSON.stringify(cycles));
+    localStorage.setItem(`${currentUserEmail}_medications`, JSON.stringify(medications));
     if (prediction) {
-      localStorage.setItem('periodPrediction', JSON.stringify(prediction));
+      localStorage.setItem(`${currentUserEmail}_periodPrediction`, JSON.stringify(prediction));
     }
     if (pregnancyStartDate) {
-        localStorage.setItem('pregnancyStartDate', pregnancyStartDate.toISOString());
+        localStorage.setItem(`${currentUserEmail}_pregnancyStartDate`, pregnancyStartDate.toISOString());
+    } else {
+        localStorage.removeItem(`${currentUserEmail}_pregnancyStartDate`);
     }
-  }, [cycles, medications, prediction, pregnancyStartDate, isClient]);
+  }, [cycles, medications, prediction, pregnancyStartDate, isClient, currentUserEmail]);
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
     if(newCycles.length === 0 || pregnancyStartDate) return;
@@ -96,7 +101,7 @@ export function PeriodTracker() {
           pastCycleData,
           mood: 'calm',
           physicalSymptoms: 'None',
-          age: userProfile.age,
+          age: userProfile.age || undefined,
           medicalHistory: userProfile.medicalHistory
         });
         setPrediction(result);
@@ -118,11 +123,11 @@ export function PeriodTracker() {
   };
 
   useEffect(() => {
-    if(isClient && cycles.length > 0) {
+    if(isClient && cycles.length > 0 && currentUserEmail) {
         handlePrediction(cycles);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cycles, isClient]);
+  }, [cycles.length, isClient, currentUserEmail]); // Depend on length to re-trigger on add/remove
 
   useEffect(() => {
     if (prediction?.predictedStartDate) {
@@ -149,7 +154,7 @@ export function PeriodTracker() {
         title: 'Cycle Logged',
         description: `Your period from ${range.from.toLocaleDateString()} to ${range.to.toLocaleDateString()} has been logged.`,
       });
-      handlePrediction(updatedCycles);
+      // Prediction is triggered by the useEffect watching `cycles`
     } else {
       toast({
         variant: 'destructive',
@@ -162,7 +167,7 @@ export function PeriodTracker() {
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
   const cycleHistory = cycles.slice(-2);
 
-  if (!isClient) {
+  if (!isClient || !currentUserEmail) {
       return null;
   }
   

@@ -10,11 +10,16 @@ import { Button } from '@/components/ui/button';
 export default function SignInPage() {
   const router = useRouter();
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Implement actual sign-in logic with Firebase Auth
-    console.log('Signing in...');
-    router.push('/dashboard');
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+
+    if (email) {
+      // In a real app, this would be set after successful authentication.
+      localStorage.setItem('currentUserEmail', email);
+      router.push('/dashboard');
+    }
   };
 
   return (
@@ -30,7 +35,7 @@ export default function SignInPage() {
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="font-semibold">Email</Label>
-              <Input id="email" type="email" placeholder="name@example.com" required />
+              <Input id="email" name="email" type="email" placeholder="name@example.com" required />
             </div>
 
             <div className="space-y-2">

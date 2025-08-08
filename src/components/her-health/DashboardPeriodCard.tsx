@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const phases = {
   menstrual: { name: 'Menstrual', Icon: Droplet },
@@ -18,19 +19,34 @@ const phases = {
 type PhaseKey = keyof typeof phases;
 
 export function DashboardPeriodCard() {
+  const router = useRouter();
   const [currentPhase, setCurrentPhase] = useState<PhaseKey | null>(null);
   const [lastCycleStart, setLastCycleStart] = useState<Date | null>(null);
   const [prediction, setPrediction] = useState<{ predictedStartDate: string } | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [cycles, setCycles] = useState<{ start: Date, end: Date }[]>([]);
 
   useEffect(() => {
     setIsClient(true);
-    // Simulate fetching last cycle start date
-    const fetchedDate = addDays(subMonths(new Date(), 1), 0);
-    setLastCycleStart(fetchedDate);
-    setPrediction({
-      predictedStartDate: addDays(new Date(), 15).toISOString(),
-    });
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      // Can't show data if no user is logged in
+      return;
+    }
+    
+    const savedCycles = localStorage.getItem(`${email}_periodCycles`);
+    if (savedCycles) {
+      const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ start: new Date(c.start), end: new Date(c.end) }));
+      setCycles(parsedCycles);
+      if (parsedCycles.length > 0) {
+        setLastCycleStart(parsedCycles[parsedCycles.length-1].start);
+      }
+    }
+
+    const savedPrediction = localStorage.getItem(`${email}_periodPrediction`);
+    if(savedPrediction) {
+      setPrediction(JSON.parse(savedPrediction));
+    }
   }, []);
 
   useEffect(() => {
@@ -53,7 +69,7 @@ export function DashboardPeriodCard() {
 
   if (!isClient) {
     // Render a loading state or null on the server to avoid hydration mismatch
-    return null; 
+    return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
   }
 
   return (
