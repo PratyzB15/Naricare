@@ -139,54 +139,36 @@ export function PeriodTracker() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-      <div className="lg:col-span-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+      <div className="lg:col-span-4 space-y-6">
         <CalendarCard
           cycles={cycles}
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
-      </div>
-      <div className="lg:col-span-3 flex flex-col gap-4">
-        
-        {prediction?.healthAnalysis && (
-            <Card className="border-destructive/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-destructive">
-                        <AlertTriangle />
-                        Health Analysis
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-destructive">{prediction.healthAnalysis}</p>
-                </CardContent>
-            </Card>
-        )}
-        
         {prediction?.flowPrediction && (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Droplet />
-                        Predicted Flow
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                   <p>{prediction.flowPrediction}</p>
-                   <div className="pt-4">
-                        <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
-                        <Textarea 
-                            placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
-                            value={flowFeedback}
-                            onChange={(e) => setFlowFeedback(e.target.value)}
-                        />
-                        <Button className="mt-2" size="sm">Submit Feedback</Button>
-                   </div>
-                </CardContent>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Droplet />
+                Predicted Flow
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p>{prediction.flowPrediction}</p>
+              <div className="pt-4">
+                <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
+                <Textarea
+                  placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
+                  value={flowFeedback}
+                  onChange={(e) => setFlowFeedback(e.target.value)}
+                />
+                <Button className="mt-2" size="sm">Submit Feedback</Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
-
-        {prediction && !prediction.healthAnalysis && (
+         {prediction && !prediction.healthAnalysis && (
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -201,6 +183,22 @@ export function PeriodTracker() {
             </Card>
         )}
 
+      </div>
+      <div className="lg:col-span-3 flex flex-col gap-6">
+        {prediction?.healthAnalysis && (
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle />
+                Health Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-destructive">{prediction.healthAnalysis}</p>
+            </CardContent>
+          </Card>
+        )}
+        
         {cycleHistory.length > 0 && (
              <Card>
                 <CardHeader>
