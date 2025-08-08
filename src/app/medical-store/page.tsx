@@ -24,10 +24,64 @@ const products = [
     dataAiHint: 'menstrual cup'
   },
   {
-    name: 'Pain Relief Medication',
-    price: '9.99',
+    name: 'Meftal-Spas',
+    price: '0.25',
     image: 'https://placehold.co/300x200.png',
     dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Drotin-M',
+    price: '0.35',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Cyclopam',
+    price: '0.25',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Spasmo-Proxyvon',
+    price: '0.40',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Ibuprofen',
+    price: '0.20',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Buscopan',
+    price: '0.22',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Naproxen',
+    price: '0.40',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Paracetamol',
+    price: '0.10',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'painkillers medicine'
+  },
+  {
+    name: 'Rubber Hot Water Bag',
+    price: '3.00',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'hot water bag'
+  },
+  {
+    name: 'Electric Heating Bag',
+    price: '5.00',
+    image: 'https://placehold.co/300x200.png',
+    dataAiHint: 'electric heating bag'
   },
 ];
 
