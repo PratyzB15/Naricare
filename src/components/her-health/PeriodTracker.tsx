@@ -139,52 +139,15 @@ export function PeriodTracker() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-      <div className="lg:col-span-4 space-y-6">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-12">
+      <div className="lg:col-span-7">
         <CalendarCard
           cycles={cycles}
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
-        {prediction?.flowPrediction && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Droplet />
-                Predicted Flow
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>{prediction.flowPrediction}</p>
-              <div className="pt-4">
-                <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
-                <Textarea
-                  placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
-                  value={flowFeedback}
-                  onChange={(e) => setFlowFeedback(e.target.value)}
-                />
-                <Button className="mt-2" size="sm">Submit Feedback</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-         {prediction && !prediction.healthAnalysis && (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <HeartPulse />
-                        Prediction Details
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                    <p><strong>Reasoning:</strong> {prediction.reasoning}</p>
-                    <p><strong>Confidence:</strong> {Math.round(prediction.confidence * 100)}%</p>
-                </CardContent>
-            </Card>
-        )}
-
       </div>
-      <div className="lg:col-span-3 flex flex-col gap-6">
+      <div className="lg:col-span-5 flex flex-col gap-6">
         {prediction?.healthAnalysis && (
           <Card className="border-destructive/50">
             <CardHeader>
@@ -220,11 +183,51 @@ export function PeriodTracker() {
         )}
 
         <CyclePhaseCard lastCycleStart={lastCycle?.start} />
+      </div>
+
+       <div className="lg:col-span-12 grid md:grid-cols-2 gap-6">
+         {prediction?.flowPrediction && (
+            <Card>
+                <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Droplet />
+                    Predicted Flow
+                </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                <p>{prediction.flowPrediction}</p>
+                <div className="pt-4">
+                    <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
+                    <Textarea
+                    placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
+                    value={flowFeedback}
+                    onChange={(e) => setFlowFeedback(e.target.value)}
+                    />
+                    <Button className="mt-2" size="sm">Submit Feedback</Button>
+                </div>
+                </CardContent>
+            </Card>
+            )}
         <MedicationReminderCard
           medications={medications}
           setMedications={setMedications}
         />
-      </div>
+       </div>
+
+        {prediction && !prediction.healthAnalysis && (
+             <Card className="lg:col-span-12">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <HeartPulse />
+                        Prediction Details
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                    <p><strong>Reasoning:</strong> {prediction.reasoning}</p>
+                    <p><strong>Confidence:</strong> {Math.round(prediction.confidence * 100)}%</p>
+                </CardContent>
+            </Card>
+        )}
     </div>
   );
 }
