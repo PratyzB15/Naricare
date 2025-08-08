@@ -92,6 +92,7 @@ export function PeriodTracker() {
     if(cycles.length > 0) {
         handlePrediction(cycles);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cycles]); // Depend on cycles state
 
 
@@ -139,15 +140,43 @@ export function PeriodTracker() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-12">
-      <div className="lg:col-span-7">
+    <div className="grid gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2 flex flex-col gap-6">
         <CalendarCard
           cycles={cycles}
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
+        <div className="grid md:grid-cols-2 gap-6">
+            {prediction?.flowPrediction && (
+                <Card>
+                    <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Droplet />
+                        Predicted Flow
+                    </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                    <p>{prediction.flowPrediction}</p>
+                    <div className="pt-4">
+                        <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
+                        <Textarea
+                        placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
+                        value={flowFeedback}
+                        onChange={(e) => setFlowFeedback(e.target.value)}
+                        />
+                        <Button className="mt-2" size="sm">Submit Feedback</Button>
+                    </div>
+                    </CardContent>
+                </Card>
+            )}
+            <MedicationReminderCard
+                medications={medications}
+                setMedications={setMedications}
+            />
+        </div>
       </div>
-      <div className="lg:col-span-5 flex flex-col gap-6">
+      <div className="lg:col-span-1 flex flex-col gap-6">
         {prediction?.healthAnalysis && (
           <Card className="border-destructive/50">
             <CardHeader>
@@ -161,6 +190,8 @@ export function PeriodTracker() {
             </CardContent>
           </Card>
         )}
+        
+        <CyclePhaseCard lastCycleStart={lastCycle?.start} />
         
         {cycleHistory.length > 0 && (
              <Card>
@@ -181,41 +212,9 @@ export function PeriodTracker() {
                 </CardContent>
             </Card>
         )}
-
-        <CyclePhaseCard lastCycleStart={lastCycle?.start} />
-      </div>
-
-       <div className="lg:col-span-12 grid md:grid-cols-2 gap-6">
-         {prediction?.flowPrediction && (
-            <Card>
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Droplet />
-                    Predicted Flow
-                </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                <p>{prediction.flowPrediction}</p>
-                <div className="pt-4">
-                    <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
-                    <Textarea
-                    placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
-                    value={flowFeedback}
-                    onChange={(e) => setFlowFeedback(e.target.value)}
-                    />
-                    <Button className="mt-2" size="sm">Submit Feedback</Button>
-                </div>
-                </CardContent>
-            </Card>
-            )}
-        <MedicationReminderCard
-          medications={medications}
-          setMedications={setMedications}
-        />
-       </div>
-
+        
         {prediction && !prediction.healthAnalysis && (
-             <Card className="lg:col-span-12">
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <HeartPulse />
@@ -228,6 +227,7 @@ export function PeriodTracker() {
                 </CardContent>
             </Card>
         )}
+      </div>
     </div>
   );
 }
