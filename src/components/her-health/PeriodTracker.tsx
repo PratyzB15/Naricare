@@ -32,18 +32,25 @@ export function PeriodTracker() {
 
   // These would be loaded from a user's profile
   const [userProfile] = useState({ age: 30, medicalHistory: 'None' }); 
+  const [isClient, setIsClient] = useState(false);
 
   // Simulate a returning user with some data
-  const [cycles, setCycles] = useState<PeriodCycle[]>([
-    { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
-    { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
-  ]);
+  const [cycles, setCycles] = useState<PeriodCycle[]>([]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
-  const [medications, setMedications] = useState<Medication[]>([
-      { id: '1', name: 'Iron Supplement', time: '09:00' }
-  ]);
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [flowFeedback, setFlowFeedback] = useState('');
 
+  useEffect(() => {
+    setIsClient(true);
+    // Initialize data on client-side to avoid hydration mismatch
+    setCycles([
+      { start: subMonths(new Date(), 2), end: addDays(subMonths(new Date(), 2), 4) },
+      { start: subMonths(new Date(), 1), end: addDays(subMonths(new Date(), 1), 5) },
+    ]);
+    setMedications([
+      { id: '1', name: 'Iron Supplement', time: '09:00' }
+    ]);
+  }, []);
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
     if(newCycles.length === 0) return;
@@ -80,12 +87,12 @@ export function PeriodTracker() {
     });
   };
 
-  // Initial prediction on component load
+  // Initial prediction on component load, only runs on client after cycles are set
   useEffect(() => {
     if(cycles.length > 0) {
         handlePrediction(cycles);
     }
-  }, []);
+  }, [cycles]); // Depend on cycles state
 
 
   useEffect(() => {
@@ -127,6 +134,9 @@ export function PeriodTracker() {
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
   const cycleHistory = cycles.slice(-2);
 
+  if (!isClient) {
+      return null; // or a loading skeleton
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

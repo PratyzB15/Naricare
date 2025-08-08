@@ -41,6 +41,7 @@ You can answer questions related to pre-period, postpartum, and mood swings. You
 Your goal is to analyze their mental health through chat and act as a psychiatrist to provide emotional support and answer their questions.
 
 This is the conversation history. The user's last message is at the end.
+{{#if chatHistory}}
 {{#each chatHistory}}
   {{#if (eq role 'user')}}
     User: {{{content}}}
@@ -48,6 +49,7 @@ This is the conversation history. The user's last message is at the end.
     Bot: {{{content}}}
   {{/if}}
 {{/each}}
+{{/if}}
 User: {{{message}}}
 Bot:`,
 });

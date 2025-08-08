@@ -19,15 +19,19 @@ type PhaseKey = keyof typeof phases;
 
 export function DashboardPeriodCard() {
   const [currentPhase, setCurrentPhase] = useState<PhaseKey | null>(null);
-  const [lastCycleStart, setLastCycleStart] = useState<Date | undefined>(
-     // Simulate fetching last cycle start date
-     addDays(subMonths(new Date(), 1), 0)
-  );
-  
-  // This would be fetched from the same place as the cycle data
-  const [prediction, setPrediction] = useState<{predictedStartDate: string} | null>({
-      predictedStartDate: addDays(new Date(), 15).toISOString()
-  });
+  const [lastCycleStart, setLastCycleStart] = useState<Date | null>(null);
+  const [prediction, setPrediction] = useState<{ predictedStartDate: string } | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    // Simulate fetching last cycle start date
+    const fetchedDate = addDays(subMonths(new Date(), 1), 0);
+    setLastCycleStart(fetchedDate);
+    setPrediction({
+      predictedStartDate: addDays(new Date(), 15).toISOString(),
+    });
+  }, []);
 
   useEffect(() => {
     if (lastCycleStart) {
@@ -40,13 +44,17 @@ export function DashboardPeriodCard() {
       else if (cycleDay >= 14 && cycleDay <= 15) setCurrentPhase('ovulatory');
       else if (cycleDay > 15 && cycleDay <= 28) setCurrentPhase('luteal');
       else setCurrentPhase('luteal');
-
     } else {
       setCurrentPhase(null);
     }
   }, [lastCycleStart]);
 
   const phaseData = currentPhase ? phases[currentPhase] : null;
+
+  if (!isClient) {
+    // Render a loading state or null on the server to avoid hydration mismatch
+    return null; 
+  }
 
   return (
     <Card className="shadow-md h-full flex flex-col">
@@ -69,34 +77,34 @@ export function DashboardPeriodCard() {
             <div>
               <p className="text-sm text-muted-foreground">Current Phase</p>
               <div className="flex items-center gap-3">
-                <phaseData.Icon className="h-8 w-8 text-primary" />
+                {phaseData.Icon && <phaseData.Icon className="h-8 w-8 text-primary" />}
                 <p className="text-xl font-semibold">{phaseData.name}</p>
               </div>
             </div>
-             <div>
+            <div>
               <p className="text-sm text-muted-foreground">Next Predicted Period</p>
               <p className="text-xl font-semibold">
                 {prediction ? new Date(prediction.predictedStartDate).toLocaleDateString() : 'Calculating...'}
               </p>
             </div>
             <div>
-                <p className="text-sm text-muted-foreground">Recommendation</p>
-                <p className="font-medium text-base">
-                    {currentPhase === 'menstrual' && "Focus on rest and gentle exercise. Iron-rich foods are beneficial."}
-                    {currentPhase === 'follicular' && "Your energy is rising! It's a great time for creative projects and socializing."}
-                    {currentPhase === 'ovulatory' && "You're at your peak! A good time for important meetings or high-intensity workouts."}
-                    {currentPhase === 'luteal' && "Listen to your body. Prioritize self-care and calming activities."}
-                </p>
+              <p className="text-sm text-muted-foreground">Recommendation</p>
+              <p className="font-medium text-base">
+                {currentPhase === 'menstrual' && 'Focus on rest and gentle exercise. Iron-rich foods are beneficial.'}
+                {currentPhase === 'follicular' && "Your energy is rising! It's a great time for creative projects and socializing."}
+                {currentPhase === 'ovulatory' && "You're at your peak! A good time for important meetings or high-intensity workouts."}
+                {currentPhase === 'luteal' && 'Listen to your body. Prioritize self-care and calming activities.'}
+              </p>
             </div>
           </div>
         )}
       </CardContent>
-       <CardContent>
-            <Button asChild className="w-full">
-                <Link href="/period-tracker">
-                    Go to Period Tracker <ArrowRight className="ml-2" />
-                </Link>
-            </Button>
+      <CardContent>
+        <Button asChild className="w-full">
+          <Link href="/period-tracker">
+            Go to Period Tracker <ArrowRight className="ml-2" />
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );
