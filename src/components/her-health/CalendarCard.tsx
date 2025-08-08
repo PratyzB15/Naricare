@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { addDays, parseISO } from 'date-fns';
+import { addDays, parseISO, isSameDay } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -30,29 +31,36 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
   });
 
   const predictedDays: Date[] = [];
+  const flowDays: {
+      light: Date[],
+      medium: Date[],
+      heavy: Date[],
+  } = { light: [], medium: [], heavy: [] };
+
   if (prediction?.predictedStartDate) {
     const start = parseISO(prediction.predictedStartDate);
     for (let i = 0; i < 5; i++) { // Assume 5 days for predicted period
-      predictedDays.push(addDays(start, i));
+      const currentDay = addDays(start, i);
+      predictedDays.push(currentDay);
+
+      if (prediction.flowPrediction) {
+          const flowForDay = prediction.flowPrediction.toLowerCase();
+          
+          if (i === 0 && flowForDay.includes("day 1: medium")) {
+              flowDays.medium.push(currentDay);
+          } else if (i === 1 && flowForDay.includes("day 2: heavy")) {
+              flowDays.heavy.push(currentDay);
+          } else if (i === 2 && flowForDay.includes("day 3: heavy")) {
+              flowDays.heavy.push(currentDay);
+          } else if (i === 3 && flowForDay.includes("day 4: medium")) {
+              flowDays.medium.push(currentDay);
+          } else if (i === 4 && flowForDay.includes("day 5: light")) {
+              flowDays.light.push(currentDay);
+          }
+      }
     }
   }
 
-  const getFlowModifier = (day: Date) => {
-    if (!prediction?.predictedStartDate || !prediction.flowPrediction) return {};
-
-    const start = parseISO(prediction.predictedStartDate);
-    const dayIndex = addDays(day, 0).getDate() - start.getDate();
-    
-    if (dayIndex >= 0 && dayIndex < 5) {
-      const flowMatch = prediction.flowPrediction.toLowerCase();
-      if (flowMatch.includes("heavy")) return { flowHeavy: day };
-      if (flowMatch.includes("medium")) return { flowMedium: day };
-      if (flowMatch.includes("light")) return { flowLight: day };
-    }
-    return {};
-  };
-  
-  const flowDays = predictedDays.map(day => getFlowModifier(day));
 
   return (
     <Card className="h-full flex flex-col shadow-md">
@@ -71,9 +79,9 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
           modifiers={{
             period: periodDays,
             predicted: predictedDays,
-            flowHeavy: flowDays.map(d => d.flowHeavy).filter(Boolean),
-            flowMedium: flowDays.map(d => d.flowMedium).filter(Boolean),
-            flowLight: flowDays.map(d => d.flowLight).filter(Boolean),
+            flowHeavy: flowDays.heavy,
+            flowMedium: flowDays.medium,
+            flowLight: flowDays.light,
           }}
           modifiersClassNames={{
             period: 'bg-destructive/80 text-destructive-foreground',
