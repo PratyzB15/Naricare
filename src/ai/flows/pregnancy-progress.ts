@@ -29,9 +29,9 @@ const prompt = ai.definePrompt({
   name: 'pregnancyProgressPrompt',
   input: {schema: PregnancyProgressInputSchema},
   output: {schema: PregnancyProgressOutputSchema},
-  prompt: `You are an expert in embryology and fetal development.
+  prompt: `You are an expert in embryology and fetal development. Your task is to provide a detailed description of fetal development for a specific week of pregnancy.
 
-Based on the number of pregnancy weeks provided ({{{pregnancyWeeks}}}), generate a detailed, easy-to-understand description of the baby's development for that specific week. Use the following data as your source of truth.
+You will be given the week number. You must use the provided data to find the matching week and return a detailed description covering the baby's development, organ formation, and size.
 
 **Fetal Development Data by Week:**
 
@@ -75,7 +75,8 @@ Based on the number of pregnancy weeks provided ({{{pregnancyWeeks}}}), generate
 *   **Week 39**: Fully mature. Baby: Fully mature; brain still growing rapidly.
 *   **Week 40**: Due date. Baby: Most weigh 2.8–4 kg.
 
-Provide a response only for the requested week.
+Based on the data above, describe the fetal development for the following week.
+
 Requested week: {{{pregnancyWeeks}}}
 `,
 });
