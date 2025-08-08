@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -18,6 +19,7 @@ export type PregnancyProgressInput = z.infer<typeof PregnancyProgressInputSchema
 
 const PregnancyProgressOutputSchema = z.object({
   fetalDevelopment: z.string().describe('A detailed description of the baby\'s development at the given week of pregnancy, including organ formation and size.'),
+  babySizeComparison: z.string().describe('A comparison of the baby\'s size to a fruit, vegetable, or other common object.'),
 });
 export type PregnancyProgressOutput = z.infer<typeof PregnancyProgressOutputSchema>;
 
@@ -29,9 +31,11 @@ const prompt = ai.definePrompt({
   name: 'pregnancyProgressPrompt',
   input: {schema: PregnancyProgressInputSchema},
   output: {schema: PregnancyProgressOutputSchema},
-  prompt: `You are an expert in embryology and fetal development. Your task is to provide a detailed description of fetal development for a specific week of pregnancy.
+  prompt: `You are an expert in embryology and fetal development. Your task is to provide a detailed description of fetal development and a size comparison for a specific week of pregnancy.
 
-You will be given the week number. You must use the provided data to find the matching week and return a detailed description covering the baby's development, organ formation, and size.
+You will be given the week number. Use the provided data tables to find the matching week and return:
+1.  A detailed \`fetalDevelopment\` description.
+2.  The \`babySizeComparison\` from the table.
 
 **Fetal Development Data by Week:**
 
@@ -75,7 +79,48 @@ You will be given the week number. You must use the provided data to find the ma
 *   **Week 39**: Fully mature. Baby: Fully mature; brain still growing rapidly.
 *   **Week 40**: Due date. Baby: Most weigh 2.8–4 kg.
 
-Based on the data above, describe the fetal development for the following week.
+**Fetal Size Comparison Data by Week:**
+*   **Week 1-2**: — (pre-conception)
+*   **Week 3**: Poppy seed
+*   **Week 4**: Sesame seed
+*   **Week 5**: Lentil
+*   **Week 6**: Grain of rice
+*   **Week 7**: Blueberry
+*   **Week 8**: Kidney bean
+*   **Week 9**: Grape
+*   **Week 10**: Kumquat
+*   **Week 11**: Fig
+*   **Week 12**: Lime
+*   **Week 13**: Pea pod
+*   **Week 14**: Lemon
+*   **Week 15**: Apple
+*   **Week 16**: Avocado
+*   **Week 17**: Onion
+*   **Week 18**: Sweet potato
+*   **Week 19**: Mango
+*   **Week 20**: Banana
+*   **Week 21**: Carrot
+*   **Week 22**: Spaghetti squash
+*   **Week 23**: Large mango
+*   **Week 24**: Corn on the cob
+*   **Week 25**: Rutabaga
+*   **Week 26**: Scallion bunch
+*   **Week 27**: Cauliflower
+*   **Week 28**: Large eggplant
+*   **Week 29**: Butternut squash
+*   **Week 30**: Cabbage
+*   **Week 31**: Coconut
+*   **Week 32**: Jicama
+*   **Week 33**: Pineapple
+*   **Week 34**: Cantaloupe
+*   **Week 35**: Honeydew melon
+*   **Week 36**: Romaine lettuce head
+*   **Week 37**: Swiss chard bunch
+*   **Week 38**: Leek bunch
+*   **Week 39**: Mini watermelon
+*   **Week 40**: Small pumpkin
+
+Based on the data tables above, provide the development details and size comparison for the following week.
 
 Requested week: {{{pregnancyWeeks}}}
 `,

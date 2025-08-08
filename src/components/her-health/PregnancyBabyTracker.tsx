@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +16,7 @@ import { babyHealthTrackerAction, getPregnancyProgressAction } from '@/app/actio
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { PregnancyProgressOutput } from '@/ai/flows/pregnancy-progress';
 
 export type UltrasoundAnalysis = {
   babySizeEstimate: string;
@@ -22,9 +24,6 @@ export type UltrasoundAnalysis = {
   recommendations: string;
 };
 
-export type PregnancyProgress = {
-    fetalDevelopment: string;
-}
 
 const formSchema = z.object({
   pregnancyWeeks: z.coerce.number().min(1, 'Please enter pregnancy weeks.').max(42, 'Please enter valid pregnancy weeks.'),
@@ -42,7 +41,7 @@ export function PregnancyBabyTracker() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [analysisResult, setAnalysisResult] = useState<UltrasoundAnalysis | null>(null);
-  const [progressResult, setProgressResult] = useState<PregnancyProgress | null>(null);
+  const [progressResult, setProgressResult] = useState<PregnancyProgressOutput | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -50,7 +49,7 @@ export function PregnancyBabyTracker() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      pregnancyWeeks: 0,
+      pregnancyWeeks: undefined,
       additionalNotes: '',
       ultrasoundImage: undefined,
     },
@@ -72,22 +71,22 @@ export function PregnancyBabyTracker() {
     if (savedPregnancy) {
         const startDate = new Date(savedPregnancy);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
-        form.setValue('pregnancyWeeks', weeks > 0 ? weeks : 1);
+        form.setValue('pregnancyWeeks', weeks > 0 ? weeks : 1, { shouldValidate: true });
     }
   }, [form, router]);
 
 
-  useEffect(() => {
-    if (pregnancyWeeks >= 1 && pregnancyWeeks <= 42 && currentUserEmail) {
+  const fetchPregnancyProgress = useCallback((weeks: number, email: string) => {
+    if (weeks >= 1 && weeks <= 42) {
         setProgressResult(null);
         startTransition(async () => {
              try {
-                const result = await getPregnancyProgressAction({ pregnancyWeeks });
+                const result = await getPregnancyProgressAction({ pregnancyWeeks: weeks });
                 setProgressResult(result);
                 
                 const today = new Date();
-                const startDate = new Date(today.setDate(today.getDate() - (pregnancyWeeks * 7)));
-                localStorage.setItem(`${currentUserEmail}_pregnancyStartDate`, startDate.toISOString());
+                const startDate = new Date(today.setDate(today.getDate() - (weeks * 7)));
+                localStorage.setItem(`${email}_pregnancyStartDate`, startDate.toISOString());
 
              } catch (error) {
                  console.error("Failed to get pregnancy progress", error);
@@ -100,7 +99,13 @@ export function PregnancyBabyTracker() {
         })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pregnancyWeeks, toast, currentUserEmail]);
+  }, [toast]);
+
+  useEffect(() => {
+    if (pregnancyWeeks && currentUserEmail) {
+        fetchPregnancyProgress(pregnancyWeeks, currentUserEmail);
+    }
+  }, [pregnancyWeeks, currentUserEmail, fetchPregnancyProgress]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
