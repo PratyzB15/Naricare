@@ -75,7 +75,8 @@ Based on the number of pregnancy weeks provided ({{{pregnancyWeeks}}}), generate
 *   **Week 39**: Fully mature. Baby: Fully mature; brain still growing rapidly.
 *   **Week 40**: Due date. Baby: Most weigh 2.8–4 kg.
 
-Provide a response only for the requested week ({{{pregnancyWeeks}}}).
+Provide a response only for the requested week.
+Requested week: {{{pregnancyWeeks}}}
 `,
 });
 
