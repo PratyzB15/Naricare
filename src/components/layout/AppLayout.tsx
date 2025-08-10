@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Header } from '../her-health/Header';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -126,7 +127,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
            </SidebarFooter>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <div className="flex flex-col h-screen">
+          <Header />
+          <main className="flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </div>
+      </SidebarInset>
     </>
   );
 }

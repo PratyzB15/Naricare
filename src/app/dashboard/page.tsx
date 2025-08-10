@@ -14,6 +14,7 @@ import {
   Ribbon,
   BookOpen,
   Mic,
+  Globe,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -127,16 +128,30 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <header className="mb-10 flex justify-between items-center">
-        <div className="flex-1">
-          <h1 className="text-4xl font-bold text-primary-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Explore the tools to manage your health.</p>
+    <div className="min-h-screen bg-background">
+       <header className="sticky top-0 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6 z-10">
+        <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-primary-foreground">Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" className="rounded-full" onClick={() => toast({ title: 'Coming Soon!', description: 'AI Voice Assistant will be available in a future update.'})}>
               <Mic className="h-5 w-5" />
             </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                    <Globe className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem>English</DropdownMenuItem>
+                    <DropdownMenuItem>हिन्दी (Hindi)</DropdownMenuItem>
+                    <DropdownMenuItem>বাংলা (Bengali)</DropdownMenuItem>
+                    <DropdownMenuItem>తెలుగు (Telugu)</DropdownMenuItem>
+                    <DropdownMenuItem>ಕನ್ನಡ (Kannada)</DropdownMenuItem>
+                    <DropdownMenuItem>অসমীয়া (Assamese)</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
@@ -160,26 +175,29 @@ export default function Dashboard() {
             </DropdownMenu>
         </div>
       </header>
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1">
-          <DashboardPeriodCard />
-        </div>
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {features.map((feature) => (
-            <Link href={feature.href} key={feature.title} className="group">
-              <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
-                <CardHeader className="flex flex-row items-start gap-4 p-0">
-                  <div className={`rounded-full p-3 ${feature.bgColor}`}>
-                    <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                  </div>
-                </CardHeader>
-              </Card>
-            </Link>
-          ))}
+      <div className="p-4 sm:p-6 lg:p-8">
+        <p className="text-muted-foreground mb-10">Explore the tools to manage your health.</p>
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+            <DashboardPeriodCard />
+            </div>
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature) => (
+                <Link href={feature.href} key={feature.title} className="group">
+                <Card className="hover:shadow-2xl hover:border-accent transition-all duration-300 cursor-pointer h-full flex flex-col p-6 rounded-2xl transform hover:-translate-y-2">
+                    <CardHeader className="flex flex-row items-start gap-4 p-0">
+                    <div className={`rounded-full p-3 ${feature.bgColor}`}>
+                        <feature.icon className={`w-8 h-8 ${feature.color} transition-transform group-hover:scale-110`} />
+                    </div>
+                    <div className="flex-1">
+                        <CardTitle className="text-xl mb-1">{feature.title}</CardTitle>
+                        <CardDescription>{feature.description}</CardDescription>
+                    </div>
+                    </CardHeader>
+                </Card>
+                </Link>
+            ))}
+            </div>
         </div>
       </div>
     </div>
