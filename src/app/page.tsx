@@ -10,8 +10,50 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
+
+
+const translations = {
+    en: {
+        title1: "Your Health,",
+        title2: "Your Priority",
+        description: "Comprehensive women's health tracking with period monitoring, fertility insights, and personalized wellness guidance - designed for every woman, everywhere.",
+        start_tracking: "Start Tracking Today",
+        sign_in: "Sign In",
+        support: "Support",
+        languages: "Languages",
+        safe_secure: "Safe & Secure"
+    },
+    hi: {
+        title1: "आपका स्वास्थ्य,",
+        title2: "आपकी प्राथमिकता",
+        description: "पीरियड मॉनिटरिंग, प्रजनन क्षमता की जानकारी और व्यक्तिगत कल्याण मार्गदर्शन के साथ व्यापक महिला स्वास्थ्य ट्रैकिंग - हर महिला के लिए, हर जगह डिज़ाइन किया गया।",
+        start_tracking: "आज ही ट्रैकिंग शुरू करें",
+        sign_in: "साइन इन करें",
+        support: "समर्थन",
+        languages: "भाषाएँ",
+        safe_secure: "सुरक्षित"
+    }
+}
+
 
 export default function WelcomePage() {
+    const [language, setLanguage] = useState('en');
+
+    useEffect(() => {
+        const savedLang = localStorage.getItem('appLanguage');
+        if (savedLang && ['en', 'hi'].includes(savedLang)) {
+            setLanguage(savedLang);
+        }
+    }, []);
+
+    const handleLanguageChange = (lang: string) => {
+        setLanguage(lang);
+        localStorage.setItem('appLanguage', lang);
+    }
+    
+    const t = translations[language as keyof typeof translations] || translations.en;
+
     return (
         <div className="min-h-screen bg-background">
           <header className="absolute top-0 left-0 right-0 p-4 flex justify-end">
@@ -22,12 +64,12 @@ export default function WelcomePage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>English</DropdownMenuItem>
-                  <DropdownMenuItem>हिन्दी (Hindi)</DropdownMenuItem>
-                  <DropdownMenuItem>বাংলা (Bengali)</DropdownMenuItem>
-                  <DropdownMenuItem>తెలుగు (Telugu)</DropdownMenuItem>
-                  <DropdownMenuItem>ಕನ್ನಡ (Kannada)</DropdownMenuItem>
-                  <DropdownMenuItem>অসমীয়া (Assamese)</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleLanguageChange('en')}>English</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleLanguageChange('hi')}>हिन्दी (Hindi)</DropdownMenuItem>
+                  <DropdownMenuItem disabled>বাংলা (Bengali)</DropdownMenuItem>
+                  <DropdownMenuItem disabled>తెలుగు (Telugu)</DropdownMenuItem>
+                  <DropdownMenuItem disabled>ಕನ್ನಡ (Kannada)</DropdownMenuItem>
+                  <DropdownMenuItem disabled>অসমীয়া (Assamese)</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
           </header>
@@ -35,31 +77,31 @@ export default function WelcomePage() {
             <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6 text-center lg:text-left">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter">
-                  Your Health, <br />
-                  <span className="text-pink-500">Your Priority</span>
+                  {t.title1} <br />
+                  <span className="text-pink-500">{t.title2}</span>
                 </h1>
                 <p className="max-w-md mx-auto lg:mx-0 text-muted-foreground md:text-lg">
-                  Comprehensive women's health tracking with period monitoring, fertility insights, and personalized wellness guidance - designed for every woman, everywhere.
+                  {t.description}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <Button asChild size="lg" className="bg-pink-400/80 text-white hover:bg-pink-400">
-                    <Link href="/signup">Start Tracking Today</Link>
+                    <Link href="/signup">{t.start_tracking}</Link>
                   </Button>
                   <Button asChild size="lg" variant="outline">
-                     <Link href="/signin">Sign In</Link>
+                     <Link href="/signin">{t.sign_in}</Link>
                   </Button>
                 </div>
                 <div className="flex justify-center lg:justify-start gap-8 pt-4">
                     <div>
                         <p className="font-bold text-pink-500 text-lg">24/7</p>
-                        <p className="text-sm text-muted-foreground">Support</p>
+                        <p className="text-sm text-muted-foreground">{t.support}</p>
                     </div>
                      <div>
                         <p className="font-bold text-green-500 text-lg">100+</p>
-                        <p className="text-sm text-muted-foreground">Languages</p>
+                        <p className="text-sm text-muted-foreground">{t.languages}</p>
                     </div>
                      <div>
-                        <p className="font-bold text-blue-500 text-lg">Safe</p>
+                        <p className="font-bold text-blue-500 text-lg">{t.safe_secure}</p>
                         <p className="text-sm text-muted-foreground">& Secure</p>
                     </div>
                 </div>
