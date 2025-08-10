@@ -108,12 +108,12 @@ export default function ConsultationPage() {
             </CardHeader>
 
             <div className="mb-8 flex justify-center">
-                 <Select onValueChange={setSelectedState} value={selectedState}>
+                 <Select onValueChange={(value) => setSelectedState(value === "all" ? "" : value)} value={selectedState}>
                     <SelectTrigger className="w-[280px]">
                         <SelectValue placeholder="Filter by State" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">All States</SelectItem>
+                        <SelectItem value="all">All States</SelectItem>
                         {allStates.map(state => (
                             <SelectItem key={state} value={state}>{state}</SelectItem>
                         ))}
