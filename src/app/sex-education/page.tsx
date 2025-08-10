@@ -167,7 +167,7 @@ export default function SexEducationPage() {
                 <AccordionItem value={section.value} key={section.title}>
                   <AccordionTrigger className="text-lg font-semibold">
                     <div className="flex items-center gap-3">
-                        <section.icon className="h-5 w-5 text-primary" />
+                        <section.icon className="h-5 w-5 text-pink-500" />
                         {section.title}
                     </div>
                   </AccordionTrigger>
