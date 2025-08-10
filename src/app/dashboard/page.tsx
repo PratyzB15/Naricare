@@ -109,6 +109,11 @@ const translations = {
         bgColor: 'bg-red-100/50',
       },
     ],
+    my_account: 'My Account',
+    profile: 'Profile',
+    sign_out: 'Sign Out',
+    coming_soon: 'Coming Soon!',
+    voice_assistant_desc: 'AI Voice Assistant will be available in a future update.',
   },
   hi: {
     dashboard: 'डैशबोर्ड',
@@ -187,6 +192,11 @@ const translations = {
         bgColor: 'bg-red-100/50',
       },
     ],
+    my_account: 'मेरा खाता',
+    profile: 'प्रोफ़ाइल',
+    sign_out: 'साइन आउट',
+    coming_soon: 'जल्द आ रहा है!',
+    voice_assistant_desc: 'एआई वॉयस असिस्टेंट भविष्य के अपडेट में उपलब्ध होगा।',
   },
 };
 
@@ -210,7 +220,20 @@ export default function Dashboard() {
         setLanguage(savedLang);
     }
 
-  }, [router]);
+    const handleStorageChange = () => {
+        const newLang = localStorage.getItem('appLanguage');
+        if (newLang && newLang !== language) {
+            setLanguage(newLang);
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
+  }, [router, language]);
 
   const handleSignOut = () => {
     localStorage.removeItem('currentUserEmail');
@@ -221,6 +244,7 @@ export default function Dashboard() {
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem('appLanguage', lang);
+    window.dispatchEvent(new Event('storage'));
   }
 
   const t = translations[language as keyof typeof translations] || translations.en;
@@ -230,10 +254,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
        <header className="sticky top-0 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6 z-10">
         <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-primary-foreground">{t.dashboard}</h1>
+            <h1 className="text-2xl font-bold text-primary">{t.dashboard}</h1>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="rounded-full" onClick={() => toast({ title: 'Coming Soon!', description: 'AI Voice Assistant will be available in a future update.'})}>
+            <Button variant="outline" size="icon" className="rounded-full" onClick={() => toast({ title: t.coming_soon, description: t.voice_assistant_desc})}>
               <Mic className="h-5 w-5" />
             </Button>
             <DropdownMenu>
@@ -258,17 +282,17 @@ export default function Dashboard() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{t.my_account}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    <span>{t.profile}</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign Out</span>
+                  <span>{t.sign_out}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

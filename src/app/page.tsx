@@ -50,6 +50,7 @@ export default function WelcomePage() {
     const handleLanguageChange = (lang: string) => {
         setLanguage(lang);
         localStorage.setItem('appLanguage', lang);
+        window.dispatchEvent(new Event('storage'));
     }
     
     const t = translations[language as keyof typeof translations] || translations.en;
@@ -78,13 +79,13 @@ export default function WelcomePage() {
               <div className="space-y-6 text-center lg:text-left">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter">
                   {t.title1} <br />
-                  <span className="text-pink-500">{t.title2}</span>
+                  <span className="text-primary">{t.title2}</span>
                 </h1>
                 <p className="max-w-md mx-auto lg:mx-0 text-muted-foreground md:text-lg">
                   {t.description}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Button asChild size="lg" className="bg-pink-400/80 text-white hover:bg-pink-400">
+                  <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
                     <Link href="/signup">{t.start_tracking}</Link>
                   </Button>
                   <Button asChild size="lg" variant="outline">
@@ -93,7 +94,7 @@ export default function WelcomePage() {
                 </div>
                 <div className="flex justify-center lg:justify-start gap-8 pt-4">
                     <div>
-                        <p className="font-bold text-pink-500 text-lg">24/7</p>
+                        <p className="font-bold text-primary text-lg">24/7</p>
                         <p className="text-sm text-muted-foreground">{t.support}</p>
                     </div>
                      <div>
@@ -108,14 +109,15 @@ export default function WelcomePage() {
               </div>
               <div className="relative">
                  <Image
-                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAGQCAYAAAByNR6RAAACNUlEQVR4nO3WMQHAQAgEMCgB/6FNND/h1J9I+GMSWgEBAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIH/gH1rYAA+sMToAAAAABJRU5ErkJggg=="
+                    src="https://placehold.co/600x400.png"
+                    data-ai-hint="woman health"
                     width={600}
                     height={400}
                     alt="Women's Health"
                     className="rounded-xl shadow-2xl"
                  />
                  <div className="absolute -top-4 -right-4 bg-white p-3 rounded-full shadow-lg">
-                    <Flower2 className="text-pink-400 h-6 w-6"/>
+                    <Flower2 className="text-primary h-6 w-6"/>
                  </div>
                  <div className="absolute -bottom-6 left-10 bg-white p-3 rounded-full shadow-lg">
                     <Heart className="text-green-400 h-6 w-6"/>
