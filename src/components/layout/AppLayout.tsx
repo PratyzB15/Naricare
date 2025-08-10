@@ -20,6 +20,7 @@ import {
   Video,
   User,
   Ribbon,
+  BookOpen,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -52,6 +53,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/cancer-screening',
       icon: Ribbon,
       label: 'Cancer Screening',
+    },
+    {
+        href: '/sex-education',
+        icon: BookOpen,
+        label: 'Sex Education',
     },
     {
         href: '/medical-store',

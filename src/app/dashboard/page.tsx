@@ -12,6 +12,7 @@ import {
   User,
   LogOut,
   Ribbon,
+  BookOpen,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -68,6 +69,14 @@ const features = [
     href: '/cancer-screening',
     color: 'text-amber-600',
     bgColor: 'bg-amber-100/50',
+  },
+  {
+    title: 'Sex Education',
+    description: 'Learn about your body, health, and wellness.',
+    icon: BookOpen,
+    href: '/sex-education',
+    color: 'text-cyan-500',
+    bgColor: 'bg-cyan-100/50',
   },
   {
     title: 'Medical Store',
