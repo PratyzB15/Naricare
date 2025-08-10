@@ -6,3 +6,4 @@ import '@/ai/flows/mental-health-chatbot.ts';
 import '@/ai/flows/baby-health-tracker.ts';
 import '@/ai/flows/period-predictions.ts';
 import '@/ai/flows/pregnancy-progress.ts';
+import '@/ai/flows/breast-cancer-analysis.ts';

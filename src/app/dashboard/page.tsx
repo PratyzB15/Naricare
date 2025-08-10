@@ -11,6 +11,7 @@ import {
   HeartPulse,
   User,
   LogOut,
+  Ribbon,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -59,6 +60,14 @@ const features = [
     href: '/pregnancy-baby-tracker',
     color: 'text-teal-500',
     bgColor: 'bg-teal-100/50',
+  },
+    {
+    title: 'Cancer Screening',
+    description: 'Self-examination guides and symptom analysis.',
+    icon: Ribbon,
+    href: '/cancer-screening',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100/50',
   },
   {
     title: 'Medical Store',

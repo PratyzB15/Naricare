@@ -5,6 +5,7 @@ import { getHormonalCycleNutrition, type HormonalCycleNutritionInput } from '@/a
 import { mentalHealthChatbot, type MentalHealthChatbotInput } from '@/ai/flows/mental-health-chatbot';
 import { babyHealthTracker, type BabyHealthTrackerInput } from '@/ai/flows/baby-health-tracker';
 import { getPregnancyProgress, type PregnancyProgressInput } from '@/ai/flows/pregnancy-progress';
+import { breastCancerAnalysis, type BreastCancerAnalysisInput } from '@/ai/flows/breast-cancer-analysis';
 
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
@@ -55,5 +56,15 @@ export async function getPregnancyProgressAction(input: PregnancyProgressInput) 
     } catch (e) {
         console.error(e);
         throw new Error('Failed to get pregnancy progress from AI.');
+    }
+}
+
+export async function breastCancerAnalysisAction(input: BreastCancerAnalysisInput) {
+    try {
+        const result = await breastCancerAnalysis(input);
+        return result;
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to get cancer analysis from AI.');
     }
 }

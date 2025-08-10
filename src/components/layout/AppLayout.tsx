@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Video,
   User,
+  Ribbon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -46,6 +47,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/pregnancy-baby-tracker',
       icon: Baby,
       label: 'Pregnancy & Baby Tracker',
+    },
+    {
+      href: '/cancer-screening',
+      icon: Ribbon,
+      label: 'Cancer Screening',
     },
     {
         href: '/medical-store',
