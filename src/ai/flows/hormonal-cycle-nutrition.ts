@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Personalized nutrition and diet recommendations based on hormonal cycle phase.
+ * @fileOverview Personalized nutrition and diet recommendations based on hormonal cycle phase or pregnancy week.
  *
  * - getHormonalCycleNutrition - A function that provides personalized nutrition recommendations.
  * - HormonalCycleNutritionInput - The input type for the getHormonalCycleNutrition function.
@@ -13,7 +13,12 @@ import {z} from 'genkit';
 const HormonalCycleNutritionInputSchema = z.object({
   cyclePhase: z
     .string()
+    .optional()
     .describe("The current phase of the user's menstrual cycle (e.g., menstruation, follicular, ovulation, luteal)."),
+  pregnancyWeek: z
+    .number()
+    .optional()
+    .describe('The current week of pregnancy.'),
   mood: z.string().optional().describe('The current mood of the user.'),
   physicalSymptoms: z
     .string()
@@ -31,7 +36,7 @@ const HormonalCycleNutritionInputSchema = z.object({
 export type HormonalCycleNutritionInput = z.infer<typeof HormonalCycleNutritionInputSchema>;
 
 const HormonalCycleNutritionOutputSchema = z.object({
-  recommendations: z.string().describe('Personalized nutrition and diet recommendations based on the input data.'),
+  recommendations: z.string().describe('Personalized nutrition and diet recommendations based on the input data. If for pregnancy, this should be a single, concise sentence focusing on one key food or nutrient.'),
 });
 export type HormonalCycleNutritionOutput = z.infer<typeof HormonalCycleNutritionOutputSchema>;
 
@@ -45,17 +50,23 @@ const prompt = ai.definePrompt({
   name: 'hormonalCycleNutritionPrompt',
   input: {schema: HormonalCycleNutritionInputSchema},
   output: {schema: HormonalCycleNutritionOutputSchema},
-  prompt: `You are a nutritionist specializing in hormonal health.
+  prompt: `You are a nutritionist specializing in hormonal and pregnancy health. 
 
-  Based on the user's current menstrual cycle phase, mood, physical symptoms, dietary preferences, and medical history, provide personalized nutrition and diet recommendations.
+{{#if pregnancyWeek}}
+You are providing advice for a pregnant person. Your task is to provide a SINGLE, CONCISE sentence recommending a key food or nutrient for the given week of pregnancy. Keep it short and actionable.
 
-  Cycle Phase: {{{cyclePhase}}}
-  Mood: {{{mood}}}
-  Physical Symptoms: {{{physicalSymptoms}}}
-  Dietary Preferences: {{{dietaryPreferences}}}
-  Medical History: {{{medicalHistory}}}
+Pregnancy Week: {{{pregnancyWeek}}}
+{{else}}
+You are providing general nutrition advice based on the menstrual cycle. Based on the user's current menstrual cycle phase, mood, physical symptoms, dietary preferences, and medical history, provide personalized nutrition and diet recommendations.
 
-  Recommendations:`, // Removed extra space at the end
+Cycle Phase: {{{cyclePhase}}}
+Mood: {{{mood}}}
+Physical Symptoms: {{{physicalSymptoms}}}
+Dietary Preferences: {{{dietaryPreferences}}}
+Medical History: {{{medicalHistory}}}
+{{/if}}
+
+Recommendations:`, 
 });
 
 const hormonalCycleNutritionFlow = ai.defineFlow(

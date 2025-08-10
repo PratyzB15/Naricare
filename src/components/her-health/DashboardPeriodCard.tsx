@@ -7,9 +7,9 @@ import { differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2 } from 'lucide-react';
+import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getPregnancyProgressAction } from '@/app/actions';
+import { getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 const phases = {
@@ -24,6 +24,7 @@ type PhaseKey = keyof typeof phases;
 type PregnancyInfo = {
     week: number;
     sizeComparison: string;
+    nutritionTip: string;
 };
 
 export function DashboardPeriodCard() {
@@ -59,8 +60,15 @@ export function DashboardPeriodCard() {
         if (weeks > 0 && weeks <= 42) {
              startTransition(async () => {
                 try {
-                    const result = await getPregnancyProgressAction({ pregnancyWeeks: weeks });
-                    setPregnancyInfo({ week: weeks, sizeComparison: result.babySizeComparison });
+                    const [progress, nutrition] = await Promise.all([
+                        getPregnancyProgressAction({ pregnancyWeeks: weeks }),
+                        getHormonalNutritionAction({ pregnancyWeek: weeks })
+                    ]);
+                    setPregnancyInfo({ 
+                        week: weeks, 
+                        sizeComparison: progress.babySizeComparison,
+                        nutritionTip: nutrition.recommendations,
+                    });
                 } catch (error) {
                      toast({
                         variant: 'destructive',
@@ -111,7 +119,7 @@ export function DashboardPeriodCard() {
     return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
   }
   
-  if (pregnancyInfo) {
+  if (pregnancyStartDate) {
     return (
         <Card className="shadow-md h-full flex flex-col bg-teal-50/50">
             <CardHeader>
@@ -121,7 +129,7 @@ export function DashboardPeriodCard() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
-                 {isPending ? (
+                 {isPending || !pregnancyInfo ? (
                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Loading weekly details...</span>
@@ -141,9 +149,9 @@ export function DashboardPeriodCard() {
                             </p>
                         </div>
                          <div>
-                            <p className="text-sm text-muted-foreground">Recommendation</p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Utensils className="h-4 w-4" /> Nutrition Tip</p>
                             <p className="font-medium text-base">
-                                Head to the Pregnancy Tracker for a detailed look at your baby's development this week.
+                                {pregnancyInfo.nutritionTip}
                             </p>
                         </div>
                     </>
