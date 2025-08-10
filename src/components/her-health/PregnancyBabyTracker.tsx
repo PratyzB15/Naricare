@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useCallback } from 'react';
@@ -39,7 +38,8 @@ const formSchema = z.object({
 
 export function PregnancyBabyTracker() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isAnalysisPending, startAnalysisTransition] = useTransition();
+  const [isProgressPending, startProgressTransition] = useTransition();
   const [analysisResult, setAnalysisResult] = useState<UltrasoundAnalysis | null>(null);
   const [progressResult, setProgressResult] = useState<PregnancyProgressOutput | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -55,7 +55,6 @@ export function PregnancyBabyTracker() {
     },
   });
   
-  const pregnancyWeeks = form.watch('pregnancyWeeks');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -79,7 +78,7 @@ export function PregnancyBabyTracker() {
   const fetchPregnancyProgress = useCallback((weeks: number, email: string) => {
     if (weeks >= 1 && weeks <= 42) {
         setProgressResult(null);
-        startTransition(async () => {
+        startProgressTransition(async () => {
              try {
                 const result = await getPregnancyProgressAction({ pregnancyWeeks: weeks });
                 setProgressResult(result);
@@ -87,6 +86,10 @@ export function PregnancyBabyTracker() {
                 const today = new Date();
                 const startDate = new Date(today.setDate(today.getDate() - (weeks * 7)));
                 localStorage.setItem(`${email}_pregnancyStartDate`, startDate.toISOString());
+                 toast({
+                    title: `Week ${weeks} Info Loaded`,
+                    description: 'Fetal development details are now showing.',
+                });
 
              } catch (error) {
                  console.error("Failed to get pregnancy progress", error);
@@ -98,14 +101,7 @@ export function PregnancyBabyTracker() {
              }
         })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
-
-  useEffect(() => {
-    if (pregnancyWeeks && currentUserEmail) {
-        fetchPregnancyProgress(pregnancyWeeks, currentUserEmail);
-    }
-  }, [pregnancyWeeks, currentUserEmail, fetchPregnancyProgress]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -129,7 +125,7 @@ export function PregnancyBabyTracker() {
   }
 
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onUltrasoundSubmit = (values: z.infer<typeof formSchema>) => {
     if (!values.ultrasoundImage) {
         toast({
             variant: 'destructive',
@@ -140,7 +136,7 @@ export function PregnancyBabyTracker() {
     }
 
     setAnalysisResult(null);
-    startTransition(async () => {
+    startAnalysisTransition(async () => {
       try {
         const ultrasoundImageDataUri = await fileToBase64(values.ultrasoundImage!);
         
@@ -165,6 +161,19 @@ export function PregnancyBabyTracker() {
     });
   };
 
+  const handleConfirmWeek = () => {
+    const weeks = form.getValues('pregnancyWeeks');
+    if (weeks && currentUserEmail) {
+        fetchPregnancyProgress(weeks, currentUserEmail);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Week',
+            description: 'Please enter a valid pregnancy week.',
+        });
+    }
+  }
+
   if (!isClient) return null;
 
   return (
@@ -179,107 +188,83 @@ export function PregnancyBabyTracker() {
             Get AI-powered insights on your baby's health, growth, and development.
           </CardDescription>
         </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="grid md:grid-cols-2 gap-8">
-               <div className="space-y-4">
-                 <FormField
-                  control={form.control}
-                  name="pregnancyWeeks"
-                  render={({ field }) => (
+        
+        <CardContent className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onUltrasoundSubmit)}>
+                <FormField
+                control={form.control}
+                name="pregnancyWeeks"
+                render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pregnancy Duration (in weeks)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} />
-                      </FormControl>
-                      <FormMessage />
+                    <FormLabel>Pregnancy Duration (in weeks)</FormLabel>
+                    <FormControl>
+                        <div className="flex gap-2">
+                            <Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} />
+                            <Button type="button" onClick={handleConfirmWeek} disabled={isProgressPending}>
+                                {isProgressPending ? <Loader2 className="h-4 w-4 animate-spin"/> : "Confirm"}
+                            </Button>
+                        </div>
+                    </FormControl>
+                    <FormMessage />
                     </FormItem>
-                  )}
+                )}
                 />
                 
-                <div className="p-4 rounded-lg bg-secondary/50 space-y-2 min-h-[150px]">
-                    <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {pregnancyWeeks || ''}: Fetal Development</h4>
-                    {isPending && !progressResult && <Loader2 className="h-5 w-5 animate-spin" />}
+                <div className="p-4 rounded-lg bg-secondary/50 space-y-2 min-h-[200px] mt-4">
+                    <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {form.watch('pregnancyWeeks') || 'X'}: Fetal Development</h4>
+                    {isProgressPending && <Loader2 className="h-5 w-5 animate-spin" />}
                     {progressResult && <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.fetalDevelopment}</p>}
-                    {!isPending && !progressResult && pregnancyWeeks > 0 && <p className="text-sm text-muted-foreground">Could not load data.</p>}
-                     {!isPending && !progressResult && !pregnancyWeeks && <p className="text-sm text-muted-foreground">Enter a week to see development details.</p>}
+                    {!isProgressPending && !progressResult && <p className="text-sm text-muted-foreground">Confirm a week to see development details.</p>}
                 </div>
 
-                 <FormField
-                  control={form.control}
-                  name="ultrasoundImage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ultrasound Image (Optional)</FormLabel>
-                      <FormControl>
+                <FormField
+                    control={form.control}
+                    name="ultrasoundImage"
+                    render={() => (
+                    <FormItem className="mt-4">
+                        <FormLabel>Ultrasound Image (Optional)</FormLabel>
+                        <FormControl>
                         <div className="relative border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
-                          <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <p className="mt-2 text-sm text-muted-foreground">
+                            <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <p className="mt-2 text-sm text-muted-foreground">
                             Drag & drop or click to upload for AI analysis
-                          </p>
-                           <Input 
-                            type="file" 
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            accept="image/png, image/jpeg"
-                            onChange={handleFileChange} 
-                          />
+                            </p>
+                            <Input 
+                                type="file" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                accept="image/png, image/jpeg"
+                                onChange={handleFileChange} 
+                            />
                         </div>
-                      </FormControl>
-                      <FormMessage />
+                        </FormControl>
+                        <FormMessage />
                     </FormItem>
-                  )}
+                    )}
                 />
                 {preview && (
-                  <div className="relative group">
+                    <div className="relative group mt-4">
                     <p className="text-sm font-medium mb-2">Image Preview:</p>
                     <img src={preview} alt="Ultrasound preview" className="rounded-lg w-full object-cover" />
                     <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => {
+                        variant="destructive" 
+                        size="icon" 
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
                         setPreview(null);
                         form.resetField('ultrasoundImage');
-                      }}
+                        }}
                     >
-                      <X className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                     </Button>
-                  </div>
+                    </div>
                 )}
-              </div>
-
-              <div className="space-y-4">
-                 {isPending && !analysisResult && (
-                    <div className="flex items-center justify-center h-full">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                 )}
-
-                 {analysisResult && (
-                    <div className="space-y-4 pt-4">
-                        <h3 className="text-xl font-semibold flex items-center gap-2"><BrainCircuit /> Ultrasound Analysis</h3>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><Baby /> Baby Size Estimate</h4>
-                            <p className="text-muted-foreground">{analysisResult.babySizeEstimate}</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><HeartPulse /> Health Assessment</h4>
-                            <p className="text-muted-foreground">{analysisResult.healthAssessment}</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><ListChecks /> Recommendations</h4>
-                            <p className="text-muted-foreground">{analysisResult.recommendations}</p>
-                        </div>
-                    </div>
-                 )}
-              </div>
-            </CardContent>
-            <CardFooter className="flex-col items-end gap-4 border-t pt-6">
-                <FormField
+                 <FormField
                   control={form.control}
                   name="additionalNotes"
                   render={({ field }) => (
-                    <FormItem className="w-full">
+                    <FormItem className="mt-4">
                       <FormLabel>Additional Notes for Ultrasound Analysis (optional)</FormLabel>
                       <FormControl>
                         <Textarea placeholder="Any specific concerns or notes from your doctor..." {...field} />
@@ -288,13 +273,42 @@ export function PregnancyBabyTracker() {
                     </FormItem>
                   )}
                 />
-              <Button type="submit" disabled={isPending || !preview}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Analyze Ultrasound
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
+                <Button type="submit" disabled={isAnalysisPending || !preview} className="w-full mt-4">
+                    {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Analyze Ultrasound
+                </Button>
+              </form>
+            </Form>
+            </div>
+
+            <div className="space-y-4 pt-8 md:pt-0">
+                {isAnalysisPending ? (
+                <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+                ) : analysisResult ? (
+                <div className="space-y-4 pt-4">
+                    <h3 className="text-xl font-semibold flex items-center gap-2"><BrainCircuit /> Ultrasound Analysis</h3>
+                    <div className="p-4 rounded-lg bg-secondary">
+                        <h4 className="font-semibold flex items-center gap-2"><Baby /> Baby Size Estimate</h4>
+                        <p className="text-muted-foreground">{analysisResult.babySizeEstimate}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-secondary">
+                        <h4 className="font-semibold flex items-center gap-2"><HeartPulse /> Health Assessment</h4>
+                        <p className="text-muted-foreground">{analysisResult.healthAssessment}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-secondary">
+                        <h4 className="font-semibold flex items-center gap-2"><ListChecks /> Recommendations</h4>
+                        <p className="text-muted-foreground">{analysisResult.recommendations}</p>
+                    </div>
+                </div>
+                ) : (
+                    <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
+                        <p className="text-muted-foreground">Upload an ultrasound image and click "Analyze Ultrasound" to see the AI-powered report here.</p>
+                    </div>
+                )}
+            </div>
+        </CardContent>
       </Card>
     </div>
   );

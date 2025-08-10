@@ -3,11 +3,34 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Flower2, Heart } from 'lucide-react';
+import { Flower2, Heart, Globe } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function WelcomePage() {
     return (
         <div className="min-h-screen bg-background">
+          <header className="absolute top-0 left-0 right-0 p-4 flex justify-end">
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Globe className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem>English</DropdownMenuItem>
+                  <DropdownMenuItem>हिन्दी (Hindi)</DropdownMenuItem>
+                  <DropdownMenuItem>বাংলা (Bengali)</DropdownMenuItem>
+                  <DropdownMenuItem>తెలుగు (Telugu)</DropdownMenuItem>
+                  <DropdownMenuItem>ಕನ್ನಡ (Kannada)</DropdownMenuItem>
+                  <DropdownMenuItem>অসমীয়া (Assamese)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+          </header>
           <section className="bg-secondary/50 py-12 sm:py-20 lg:py-28">
             <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6 text-center lg:text-left">
