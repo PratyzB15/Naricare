@@ -20,40 +20,54 @@ export default function SignUpPage() {
   const [userType, setUserType] = useState('self');
   const [uniqueId, setUniqueId] = useState<string | null>(null);
   
-  const generateUniqueId = () => {
-    const randomNumber = Math.floor(1000 + Math.random() * 9000);
-    return `HER_${randomNumber}`;
+  const generateAndStoreUniqueId = (email: string) => {
+    // A real app would use a secure, server-generated UID (e.g., UUID)
+    // and map it to the user's email on the backend.
+    // For this prototype, we'll use the email itself as the "unique id"
+    // that family members can use. It's not truly unique but works for the demo.
+    localStorage.setItem(`${email}_uniqueId`, email);
+    return email;
   }
 
   const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
-    
+    const name = formData.get('name') as string;
+
+    localStorage.setItem('currentUserEmail', email);
+    localStorage.setItem(`${email}_userType`, userType);
+
     if (userType === 'self') {
         const age = formData.get('age') as string;
         const medicalHistory = formData.get('medicalHistory') as string;
         
-        // In a real app, this would be saved to a database.
-        // For this prototype, we'll use localStorage, namespaced by email.
-        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ age: parseInt(age, 10), medicalHistory }));
+        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ name, age: parseInt(age, 10), medicalHistory }));
         
-        const newId = generateUniqueId();
+        const newId = generateAndStoreUniqueId(email);
         setUniqueId(newId);
-        localStorage.setItem(`${email}_uniqueId`, newId);
+
+    } else { // family member
+        const femaleMemberId = formData.get('femaleMemberId') as string;
+        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ name, age: null, medicalHistory: '' }));
+        // Store the ID of the user they want to track
+        localStorage.setItem(`${email}_uniqueId`, femaleMemberId);
     }
 
-    localStorage.setItem('currentUserEmail', email);
 
     toast({
         title: 'Account Created!',
         description: 'You will be redirected to the dashboard.',
     });
     
-    // We show the unique ID and then redirect.
-    setTimeout(() => {
+    // We show the unique ID and then redirect if it's a 'self' signup.
+    if (userType === 'self') {
+        setTimeout(() => {
+            router.push('/dashboard');
+        }, 4000);
+    } else {
         router.push('/dashboard');
-    }, 3000);
+    }
   };
 
   if (uniqueId) {
@@ -69,8 +83,8 @@ export default function SignUpPage() {
                         <Terminal className="h-4 w-4" />
                         <AlertTitle>Your Unique ID</AlertTitle>
                         <AlertDescription>
-                            Please save this ID. You can use it to log in or share it with family members to track your health.
-                            <p className="font-bold text-lg mt-2">{uniqueId}</p>
+                            This ID is your email address. Please save it. You can share it with family members to track your health.
+                            <p className="font-bold text-lg mt-2 break-all">{uniqueId}</p>
                         </AlertDescription>
                     </Alert>
                      <p className="text-sm text-muted-foreground mt-4 text-center">Redirecting you to the dashboard...</p>
@@ -81,7 +95,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4">
+    <div className="flex items-center justify-center min-h-screen bg-background px-4 py-8">
       <Card className="w-full max-w-md p-2">
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
@@ -117,10 +131,15 @@ export default function SignUpPage() {
               </RadioGroup>
             </div>
             
+             <div className="space-y-2">
+              <Label htmlFor="name" className="font-semibold">Your Name</Label>
+              <Input id="name" name="name" type="text" placeholder="Your full name" required />
+            </div>
+
             {userType === 'family' ? (
               <div className="space-y-2">
-                <Label htmlFor="uniqueId" className="font-semibold">Female User's Unique ID</Label>
-                <Input id="uniqueId" name="uniqueId" type="text" placeholder="Enter the user's unique ID to track" required />
+                <Label htmlFor="femaleMemberId" className="font-semibold">Female User's Unique ID (Their Email)</Label>
+                <Input id="femaleMemberId" name="femaleMemberId" type="email" placeholder="Enter the user's email to track" required />
               </div>
             ) : (
                 <>
@@ -137,7 +156,7 @@ export default function SignUpPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="font-semibold">Email</Label>
+              <Label htmlFor="email" className="font-semibold">Your Email</Label>
               <Input id="email" name="email" type="email" placeholder="name@example.com" required />
             </div>
 

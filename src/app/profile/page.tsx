@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
+  name: string;
   age: number | null;
   medicalHistory: string;
 }
@@ -19,7 +20,7 @@ interface UserProfile {
 export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile>({ age: null, medicalHistory: '' });
+  const [profile, setProfile] = useState<UserProfile>({ name: '', age: null, medicalHistory: '' });
   const [isClient, setIsClient] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
@@ -67,6 +68,15 @@ export default function ProfilePage() {
               </CardHeader>
               <form onSubmit={handleSave}>
                 <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input 
+                            id="name" 
+                            type="text"
+                            value={profile.name || ''}
+                            onChange={(e) => setProfile({...profile, name: e.target.value })}
+                        />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="age">Age</Label>
                         <Input 

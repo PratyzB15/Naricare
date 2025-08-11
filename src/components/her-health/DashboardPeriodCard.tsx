@@ -20,6 +20,7 @@ const phases = {
 };
 
 type PhaseKey = keyof typeof phases;
+type UserType = 'self' | 'family';
 
 type PregnancyInfo = {
     week: number;
@@ -27,7 +28,12 @@ type PregnancyInfo = {
     nutritionTip: string;
 };
 
-export function DashboardPeriodCard() {
+interface DashboardPeriodCardProps {
+    userType: UserType;
+    targetUserEmail: string | null;
+}
+
+export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeriodCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -45,13 +51,12 @@ export function DashboardPeriodCard() {
 
   useEffect(() => {
     setIsClient(true);
-    const email = localStorage.getItem('currentUserEmail');
-    if (!email) {
+    if (!targetUserEmail) {
       return;
     }
     
     // Check for pregnancy first
-    const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
+    const savedPregnancy = localStorage.getItem(`${targetUserEmail}_pregnancyStartDate`);
     if (savedPregnancy) {
         const startDate = new Date(savedPregnancy);
         setPregnancyStartDate(startDate);
@@ -82,7 +87,7 @@ export function DashboardPeriodCard() {
     }
 
     // Load period data if not pregnant
-    const savedCycles = localStorage.getItem(`${email}_periodCycles`);
+    const savedCycles = localStorage.getItem(`${targetUserEmail}_periodCycles`);
     if (savedCycles) {
       const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ start: new Date(c.start), end: new Date(c.end) }));
       if (parsedCycles.length > 0) {
@@ -90,12 +95,12 @@ export function DashboardPeriodCard() {
       }
     }
 
-    const savedPrediction = localStorage.getItem(`${email}_periodPrediction`);
+    const savedPrediction = localStorage.getItem(`${targetUserEmail}_periodPrediction`);
     if(savedPrediction) {
       setPrediction(JSON.parse(savedPrediction));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isClient]);
+  }, [isClient, targetUserEmail]);
 
   useEffect(() => {
     if (lastCycleStart && !pregnancyStartDate) {
@@ -127,6 +132,7 @@ export function DashboardPeriodCard() {
                     <Baby />
                     Pregnancy Journey
                 </CardTitle>
+                 {userType === 'family' && <CardDescription>Tracking pregnancy for your family member.</CardDescription>}
             </CardHeader>
             <CardContent className="flex-grow space-y-4">
                  {isPending || !pregnancyInfo ? (
@@ -139,13 +145,13 @@ export function DashboardPeriodCard() {
                         <div>
                             <p className="text-sm text-muted-foreground">Current Progress</p>
                             <p className="text-xl font-semibold">
-                                You are {pregnancyInfo.week} weeks pregnant!
+                                {pregnancyInfo.week} weeks pregnant
                             </p>
                         </div>
                          <div>
                             <p className="text-sm text-muted-foreground">Baby's Size</p>
                             <p className="text-xl font-semibold">
-                                Your baby is about the size of a {pregnancyInfo.sizeComparison.toLowerCase()}.
+                                About the size of a {pregnancyInfo.sizeComparison.toLowerCase()}.
                             </p>
                         </div>
                          <div>
@@ -157,13 +163,15 @@ export function DashboardPeriodCard() {
                     </>
                  )}
             </CardContent>
-            <CardContent>
-                <Button asChild className="w-full bg-teal-500 hover:bg-teal-600 text-white">
-                    <Link href="/pregnancy-baby-tracker">
-                        View My Pregnancy <ArrowRight className="ml-2" />
-                    </Link>
-                </Button>
-            </CardContent>
+            {userType === 'self' && (
+                <CardContent>
+                    <Button asChild className="w-full bg-teal-500 hover:bg-teal-600 text-white">
+                        <Link href="/pregnancy-baby-tracker">
+                            View My Pregnancy <ArrowRight className="ml-2" />
+                        </Link>
+                    </Button>
+                </CardContent>
+            )}
         </Card>
     );
   }
@@ -173,15 +181,16 @@ export function DashboardPeriodCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Zap />
-          Your Cycle At a Glance
+          Her Cycle At a Glance
         </CardTitle>
+         {userType === 'family' && <CardDescription>Tracking cycle for your family member.</CardDescription>}
       </CardHeader>
       <CardContent className="flex-grow space-y-4">
         {!lastCycleStart || !phaseData ? (
           <Alert>
             <AlertTitle>Welcome!</AlertTitle>
             <AlertDescription>
-              Log your first period in the tracker to get started.
+              {userType === 'self' ? 'Log your first period in the tracker to get started.' : 'Waiting for the user to log their first period.'}
             </AlertDescription>
           </Alert>
         ) : (
@@ -208,13 +217,15 @@ export function DashboardPeriodCard() {
           </div>
         )}
       </CardContent>
-      <CardContent>
-        <Button asChild className="w-full">
-          <Link href="/period-tracker">
-            Go to Period Tracker <ArrowRight className="ml-2" />
-          </Link>
-        </Button>
-      </CardContent>
+      {userType === 'self' && (
+        <CardContent>
+            <Button asChild className="w-full">
+            <Link href="/period-tracker">
+                Go to Period Tracker <ArrowRight className="ml-2" />
+            </Link>
+            </Button>
+        </CardContent>
+      )}
     </Card>
   );
 }
