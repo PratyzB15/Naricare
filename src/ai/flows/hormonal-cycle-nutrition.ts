@@ -57,7 +57,7 @@ You are providing advice for a pregnant person. Your task is to provide a detail
 
 Pregnancy Week: {{{pregnancyWeek}}}
 {{else}}
-You are providing general nutrition advice based on the menstrual cycle. Based on the user's current menstrual cycle phase, mood, physical symptoms, dietary preferences, and medical history, provide personalized nutrition and diet recommendations.
+You are providing general nutrition advice based on the menstrual cycle. Based on the user's current menstrual cycle phase, mood, physicalSymptoms, dietaryPreferences, and medicalHistory, provide personalized nutrition and diet recommendations.
 
 Cycle Phase: {{{cyclePhase}}}
 Mood: {{{mood}}}
@@ -66,6 +66,7 @@ Dietary Preferences: {{{dietaryPreferences}}}
 Medical History: {{{medicalHistory}}}
 {{/if}}
 
+Your response should be formatted as a single, comprehensive paragraph.
 Recommendations:`, 
 });
 

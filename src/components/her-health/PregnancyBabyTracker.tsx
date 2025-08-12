@@ -57,22 +57,13 @@ export function PregnancyBabyTracker() {
   
   const [isClient, setIsClient] = useState(false);
   
-  const fetchPregnancyProgress = useCallback((weeks: number, email: string) => {
+  const fetchPregnancyProgress = useCallback((weeks: number) => {
     if (weeks >= 1 && weeks <= 42) {
         setProgressResult(null);
         startProgressTransition(async () => {
              try {
                 const result = await getPregnancyProgressAction({ pregnancyWeeks: weeks });
                 setProgressResult(result);
-                
-                const today = new Date();
-                const startDate = new Date(today.setDate(today.getDate() - (weeks * 7)));
-                localStorage.setItem(`${email}_pregnancyStartDate`, startDate.toISOString());
-                 toast({
-                    title: `Week ${weeks} Info Loaded`,
-                    description: 'Fetal development details are now showing.',
-                });
-
              } catch (error) {
                  console.error("Failed to get pregnancy progress", error);
                  toast({
@@ -101,7 +92,7 @@ export function PregnancyBabyTracker() {
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         if (weeks > 0) {
             form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
-            fetchPregnancyProgress(weeks, email);
+            fetchPregnancyProgress(weeks);
         }
     }
   }, [form, router, fetchPregnancyProgress]);
@@ -168,7 +159,14 @@ export function PregnancyBabyTracker() {
   const handleConfirmWeek = () => {
     const weeks = form.getValues('pregnancyWeeks');
     if (weeks && currentUserEmail) {
-        fetchPregnancyProgress(weeks, currentUserEmail);
+        const today = new Date();
+        const startDate = new Date(today.setDate(today.getDate() - (weeks * 7)));
+        localStorage.setItem(`${currentUserEmail}_pregnancyStartDate`, startDate.toISOString());
+        fetchPregnancyProgress(weeks);
+         toast({
+            title: `Pregnancy Tracking Started!`,
+            description: `Now tracking from week ${weeks}.`,
+        });
     } else {
         toast({
             variant: 'destructive',

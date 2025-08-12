@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -130,7 +129,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-teal-600">
                     <Baby />
-                    Pregnancy Journey
+                    Your Journey of Being a Mother at a Glance
                 </CardTitle>
                  {userType === 'family' && <CardDescription>Tracking pregnancy for your family member.</CardDescription>}
             </CardHeader>

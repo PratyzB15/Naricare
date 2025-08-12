@@ -15,6 +15,7 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { useRouter } from 'next/navigation';
+import { Alert } from '../ui/alert';
 
 export type PeriodCycle = { start: Date; end: Date };
 
@@ -86,6 +87,22 @@ export function PeriodTracker() {
         localStorage.removeItem(`${currentUserEmail}_pregnancyStartDate`);
     }
   }, [cycles, medications, prediction, pregnancyStartDate, isClient, currentUserEmail]);
+  
+   // Water reminder effect
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const waterReminderInterval = setInterval(() => {
+        toast({
+            title: "Hydration Reminder",
+            description: "Time to drink a glass of water!",
+        });
+    }, 3 * 60 * 60 * 1000); // 3 hours in milliseconds
+
+    return () => {
+        clearInterval(waterReminderInterval);
+    };
+  }, [isClient, toast]);
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
     if(newCycles.length === 0 || pregnancyStartDate) return;
@@ -174,20 +191,21 @@ export function PeriodTracker() {
   if (pregnancyStartDate) {
       const pregnancyWeeks = differenceInDays(new Date(), pregnancyStartDate) / 7;
       return (
-        <Card className="lg:col-span-3">
-            <CardHeader>
+         <div className="lg:col-span-3">
+             <Alert>
+                <Baby className="h-4 w-4" />
                 <CardTitle className="flex items-center gap-2 text-2xl">
-                    <Baby /> Pregnancy Mode
+                    Pregnancy Mode
                 </CardTitle>
                 <CardDescription>
                    Period tracking is paused during your pregnancy. You are approximately {Math.floor(pregnancyWeeks)} weeks pregnant.
                 </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>Congratulations! Your period tracker is paused. Head over to the Pregnancy & Baby Tracker for weekly updates on your baby's development.</p>
-                <Button className="mt-4" onClick={() => setPregnancyStartDate(null)}>End Pregnancy</Button>
-            </CardContent>
-        </Card>
+                <CardContent className="pt-4">
+                    <p>Congratulations! Your period tracker is paused. Head over to the Pregnancy & Baby Tracker for weekly updates on your baby's development.</p>
+                    <Button className="mt-4" onClick={() => setPregnancyStartDate(null)}>End Pregnancy</Button>
+                </CardContent>
+             </Alert>
+         </div>
       );
   }
 
