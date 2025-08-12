@@ -35,13 +35,6 @@ const ageBasedAdvice: { [key: string]: string } = {
     '50+': 'Post-menopause, bone health is critical. A diet rich in calcium and Vitamin D is essential to prevent osteoporosis. Light, regular exercise can help maintain flexibility and prevent a stooped posture. Focus on a protein-rich diet to maintain muscle mass.'
 };
 
-const trimesterAdvice: { [key: string]: string } = {
-    '1': 'First Trimester (Weeks 1-13): Focus on folate-rich foods like lentils, leafy greens, and fortified cereals to prevent birth defects. Ginger and peppermint can help with morning sickness. Stay hydrated and eat small, frequent meals.',
-    '2': 'Second Trimester (Weeks 14-27): Your energy is likely returning! Increase your intake of iron (lean meats, beans), calcium (dairy, tofu), and Vitamin D (fatty fish, fortified milk) for your baby\'s growing bones and your own health.',
-    '3': 'Third Trimester (Weeks 28-40+): Your baby is growing rapidly. Prioritize protein (eggs, nuts, chicken) and Omega-3 fatty acids (salmon, walnuts) for brain development. Eat fiber-rich foods to prevent constipation and continue with iron and calcium intake.'
-};
-
-
 export function HormonalNutrition() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<HormonalNutritionResult | null>(null);
@@ -73,16 +66,22 @@ export function HormonalNutrition() {
         setIsPregnant(true);
         const startDate = new Date(savedPregnancy);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
-        if (weeks <= 13) {
-            setTrimesterInfo({ trimester: 1, advice: trimesterAdvice['1']});
-        } else if (weeks <= 27) {
-            setTrimesterInfo({ trimester: 2, advice: trimesterAdvice['2']});
-        } else {
-            setTrimesterInfo({ trimester: 3, advice: trimesterAdvice['3']});
-        }
+
+        startTransition(async () => {
+            try {
+                const res = await getHormonalNutritionAction({ pregnancyWeek: weeks });
+                setResult(res);
+            } catch (error) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Failed to Get Advice',
+                    description: 'Could not get pregnancy nutrition advice. Please try again later.',
+                });
+            }
+        });
     }
 
-  }, [router]);
+  }, [router, toast]);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -116,6 +115,35 @@ export function HormonalNutrition() {
       }
     });
   };
+
+  const renderStructuredRecommendations = (recommendations: string) => {
+    const sections: { [key: string]: string[] } = {};
+    let currentSection = '';
+
+    recommendations.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.endsWith(':')) {
+        currentSection = trimmedLine;
+        sections[currentSection] = [];
+      } else if (currentSection && trimmedLine) {
+        sections[currentSection].push(trimmedLine.replace(/^- /, ''));
+      }
+    });
+
+    return (
+        <div className="space-y-4">
+            {Object.entries(sections).map(([title, items]) => (
+                <div key={title}>
+                    <h4 className="font-semibold">{title}</h4>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1 mt-1">
+                        {items.map((item, index) => <li key={index}>{item}</li>)}
+                    </ul>
+                </div>
+            ))}
+        </div>
+    );
+  };
+
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
@@ -219,31 +247,22 @@ export function HormonalNutrition() {
         </Form>
       )}
      
-      {result && (
-        <CardContent className="border-t pt-6">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2"><Utensils /> AI Recommendations</h3>
-          <div className="prose prose-sm max-w-none text-muted-foreground">
-            {result.recommendations.split('\n').map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-          </div>
+      {isPending && !result && (
+        <CardContent>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading recommendations...</span>
+            </div>
         </CardContent>
       )}
 
-      {isPregnant && trimesterInfo && (
-          <CardContent>
-              <Card className="shadow-inner bg-teal-50/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-teal-700">
-                        <Baby />
-                        Trimester {trimesterInfo.trimester} Nutrition
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">{trimesterInfo.advice}</p>
-                </CardContent>
-              </Card>
-          </CardContent>
+      {result && (
+        <CardContent className="border-t pt-6">
+          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2"><Utensils /> AI Recommendations</h3>
+          <div className="prose prose-sm max-w-none">
+            {renderStructuredRecommendations(result.recommendations)}
+          </div>
+        </CardContent>
       )}
 
     </Card>

@@ -6,7 +6,7 @@ import { differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils } from 'lucide-react';
+import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, MessageCircleQuestion } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +46,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
   // Pregnancy State
   const [pregnancyStartDate, setPregnancyStartDate] = useState<Date | null>(null);
   const [pregnancyInfo, setPregnancyInfo] = useState<PregnancyInfo | null>(null);
-
+  const [pregnancyWeeks, setPregnancyWeeks] = useState<number | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -60,6 +60,23 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
         const startDate = new Date(savedPregnancy);
         setPregnancyStartDate(startDate);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
+        setPregnancyWeeks(weeks);
+
+        if (weeks > 51) {
+            // Pregnancy ended, clear storage
+            localStorage.removeItem(`${targetUserEmail}_pregnancyStartDate`);
+            setPregnancyStartDate(null);
+            setPregnancyWeeks(null);
+            // Reload period data
+            const savedCycles = localStorage.getItem(`${targetUserEmail}_periodCycles`);
+             if (savedCycles) {
+                const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ start: new Date(c.start), end: new Date(c.end) }));
+                if (parsedCycles.length > 0) {
+                    setLastCycleStart(parsedCycles[parsedCycles.length-1].start);
+                }
+            }
+            return;
+        }
         
         if (weeks > 0 && weeks <= 42) {
              startTransition(async () => {
@@ -71,7 +88,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
                     setPregnancyInfo({ 
                         week: weeks, 
                         sizeComparison: progress.babySizeComparison,
-                        nutritionTip: nutrition.recommendations,
+                        nutritionTip: nutrition.dashboardTip || "Focus on a balanced diet with plenty of fluids.",
                     });
                 } catch (error) {
                      toast({
@@ -121,6 +138,32 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
 
   if (!isClient) {
     return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
+  }
+
+  if (pregnancyWeeks && pregnancyWeeks >= 49) {
+      return (
+         <Card className="shadow-md h-full flex flex-col bg-pink-50/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-pink-600">
+                    <MessageCircleQuestion />
+                    Post-Delivery Journey
+                </CardTitle>
+                 <CardDescription>Your pregnancy journey is complete. It's time to focus on your recovery.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                <p>Please go to the Pregnancy Tracker to tell us about your delivery and get personalized advice for your recovery.</p>
+            </CardContent>
+            {userType === 'self' && (
+                <CardContent>
+                    <Button asChild className="w-full bg-pink-500 hover:bg-pink-600 text-white">
+                        <Link href="/pregnancy-baby-tracker">
+                           Go to Recovery Tracker <ArrowRight className="ml-2" />
+                        </Link>
+                    </Button>
+                </CardContent>
+            )}
+        </Card>
+      );
   }
   
   if (pregnancyStartDate) {

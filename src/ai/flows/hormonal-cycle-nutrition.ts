@@ -32,11 +32,13 @@ const HormonalCycleNutritionInputSchema = z.object({
     .string()
     .optional()
     .describe('Relevant medical history, including thyroid issues, PCOS, or PCOD.'),
+    postDelivery: z.boolean().optional().describe('Set to true if user is in post-delivery phase.')
 });
 export type HormonalCycleNutritionInput = z.infer<typeof HormonalCycleNutritionInputSchema>;
 
 const HormonalCycleNutritionOutputSchema = z.object({
-  recommendations: z.string().describe('Personalized nutrition and diet recommendations. For pregnancy, this should be a detailed paragraph covering key foods, vitamins, and minerals for the specified week.'),
+  recommendations: z.string().describe("For non-pregnancy, a general paragraph. For pregnancy and post-delivery, this should be a detailed, structured list covering key foods, vitamins, minerals, and lifestyle advice, with each section clearly titled (e.g., 'Key Nutrients:', 'Foods to Eat:', 'Lifestyle & Exercise:')."),
+  dashboardTip: z.string().optional().describe("A very short, crisp 2-3 line summary of the most important nutritional advice for the dashboard."),
 });
 export type HormonalCycleNutritionOutput = z.infer<typeof HormonalCycleNutritionOutputSchema>;
 
@@ -50,24 +52,38 @@ const prompt = ai.definePrompt({
   name: 'hormonalCycleNutritionPrompt',
   input: {schema: HormonalCycleNutritionInputSchema},
   output: {schema: HormonalCycleNutritionOutputSchema},
-  prompt: `You are a nutritionist specializing in hormonal and pregnancy health. 
+  prompt: `You are a nutritionist specializing in hormonal and pregnancy health.
 
 {{#if pregnancyWeek}}
-You are providing advice for a pregnant person. Your task is to provide a detailed paragraph with recommendations for the given week of pregnancy. Include key nutrients (like Folic Acid, Iron, Calcium, Protein), essential vitamins, and specific food examples.
+You are providing advice for a pregnant person. Your task is to provide a detailed, structured response with specific sections.
 
 Pregnancy Week: {{{pregnancyWeek}}}
+
+**Output format:**
+- **recommendations**: Provide a detailed list. Use these exact headings: 'Key Nutrients:', 'Foods to Eat:', 'Lifestyle & Exercise:'.
+- **dashboardTip**: Provide a very short, 2-3 line summary of the absolute most important advice for this week.
+
+{{else if postDelivery}}
+You are providing advice for a person who has recently given birth. Your task is to provide a detailed, structured response for postpartum recovery.
+
+**Output format:**
+- **recommendations**: Provide a detailed list for postpartum recovery. Use these exact headings: 'Key Nutrients for Recovery:', 'Foods for Healing & Energy:', 'Gentle Exercises:'.
+- **dashboardTip**: Provide a very short, 2-3 line summary about postpartum recovery nutrition.
+
 {{else}}
-You are providing general nutrition advice based on the menstrual cycle. Based on the user's current menstrual cycle phase, mood, physicalSymptoms, dietaryPreferences, and medicalHistory, provide personalized nutrition and diet recommendations.
+You are providing general nutrition advice based on the menstrual cycle. Based on the user's current menstrual cycle phase, mood, physicalSymptoms, dietaryPreferences, and medicalHistory, provide personalized nutrition and diet recommendations in a single paragraph.
 
 Cycle Phase: {{{cyclePhase}}}
 Mood: {{{mood}}}
 Physical Symptoms: {{{physicalSymptoms}}}
 Dietary Preferences: {{{dietaryPreferences}}}
 Medical History: {{{medicalHistory}}}
-{{/if}}
 
-Your response should be formatted as a single, comprehensive paragraph.
-Recommendations:`, 
+**Output format:**
+- **recommendations**: Provide a single, comprehensive paragraph.
+- **dashboardTip**: Create a short, 2-3 line summary of the main point in the recommendations.
+{{/if}}
+`,
 });
 
 const hormonalCycleNutritionFlow = ai.defineFlow(
