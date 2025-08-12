@@ -52,7 +52,7 @@ const prompt = ai.definePrompt({
   name: 'hormonalCycleNutritionPrompt',
   input: {schema: HormonalCycleNutritionInputSchema},
   output: {schema: HormonalCycleNutritionOutputSchema},
-  prompt: `You are a nutritionist specializing in hormonal and pregnancy health.
+  prompt: `You are an expert nutritionist specializing in women's hormonal health, pregnancy, and postpartum recovery.
 
 {{#if pregnancyWeek}}
 You are providing advice for a pregnant person. Your task is to provide a detailed, structured response with specific sections.
@@ -60,8 +60,8 @@ You are providing advice for a pregnant person. Your task is to provide a detail
 Pregnancy Week: {{{pregnancyWeek}}}
 
 **Output format:**
-- **recommendations**: Provide a detailed list. Use these exact headings: 'Key Nutrients:', 'Foods to Eat:', 'Lifestyle & Exercise:'.
-- **dashboardTip**: Provide a very short, 2-3 line summary of the absolute most important advice for this week.
+- **recommendations**: Provide a detailed list. Use these exact headings: 'Key Nutrients:', 'Foods to Eat:', 'Lifestyle & Exercise:'. This should be comprehensive.
+- **dashboardTip**: Provide a very short, 2-3 line summary of the absolute most important advice for this week. For example, "Focus on folate-rich foods like lentils and spinach for neural tube development. Stay hydrated and consider gentle walks."
 
 {{else if postDelivery}}
 You are providing advice for a person who has recently given birth. Your task is to provide a detailed, structured response for postpartum recovery.

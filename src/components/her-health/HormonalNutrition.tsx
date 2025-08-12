@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { BrainCircuit, Loader2, Info, Leaf, Utensils, Baby } from 'lucide-react';
+import { BrainCircuit, Loader2, Info, Leaf, Utensils } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -16,10 +16,7 @@ import { Input } from '@/components/ui/input';
 import { getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-
-export type HormonalNutritionResult = {
-  recommendations: string;
-};
+import type { HormonalCycleNutritionOutput } from '@/ai/flows/hormonal-cycle-nutrition';
 
 const formSchema = z.object({
   cyclePhase: z.string().min(1, 'Please select your cycle phase.'),
@@ -37,14 +34,15 @@ const ageBasedAdvice: { [key: string]: string } = {
 
 export function HormonalNutrition() {
   const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<HormonalNutritionResult | null>(null);
+  const [result, setResult] = useState<HormonalCycleNutritionOutput | null>(null);
   const [ageAdvice, setAgeAdvice] = useState<string | null>(null);
-  const [trimesterInfo, setTrimesterInfo] = useState<{trimester: number, advice: string} | null>(null);
   const [isPregnant, setIsPregnant] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
+    setIsClient(true);
     const email = localStorage.getItem('currentUserEmail');
     if (!email) {
       router.push('/signin');
@@ -122,13 +120,19 @@ export function HormonalNutrition() {
 
     recommendations.split('\n').forEach(line => {
       const trimmedLine = line.trim();
-      if (trimmedLine.endsWith(':')) {
+      if (!trimmedLine) return;
+      
+      if (trimmedLine.match(/^[\w\s&]+:$/)) {
         currentSection = trimmedLine;
         sections[currentSection] = [];
-      } else if (currentSection && trimmedLine) {
+      } else if (currentSection) {
         sections[currentSection].push(trimmedLine.replace(/^- /, ''));
       }
     });
+
+    if (Object.keys(sections).length === 0) {
+        return <p>{recommendations}</p>
+    }
 
     return (
         <div className="space-y-4">
@@ -145,6 +149,8 @@ export function HormonalNutrition() {
   };
 
 
+  if (!isClient) return null;
+
   return (
     <div className="grid md:grid-cols-2 gap-8">
     <Card className="shadow-md">
@@ -157,7 +163,7 @@ export function HormonalNutrition() {
           Get personalized diet & lifestyle advice.
         </CardDescription>
       </CardHeader>
-      {!isPregnant && (
+      {!isPregnant ? (
          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
@@ -245,6 +251,10 @@ export function HormonalNutrition() {
             </CardFooter>
             </form>
         </Form>
+      ) : (
+         <CardContent>
+             <p className="text-muted-foreground">Your nutrition advice is tailored for your pregnancy.</p>
+         </CardContent>
       )}
      
       {isPending && !result && (
@@ -264,24 +274,40 @@ export function HormonalNutrition() {
           </div>
         </CardContent>
       )}
-
     </Card>
-    {ageAdvice && (
-        <Card className="shadow-md bg-secondary/30">
-             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                <Info />
-                Age-Based Nutritional Guidance
-                </CardTitle>
-                <CardDescription>
-                Special considerations for your current life stage.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground">{ageAdvice}</p>
-            </CardContent>
-        </Card>
-    )}
+    
+    <div className="space-y-8">
+        {ageAdvice && (
+            <Card className="shadow-md bg-secondary/30">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Info />
+                    Age-Based Nutritional Guidance
+                    </CardTitle>
+                    <CardDescription>
+                    Special considerations for your current life stage.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">{ageAdvice}</p>
+                </CardContent>
+            </Card>
+        )}
+        {!isPregnant && result && (
+            <Card>
+                 <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <BrainCircuit />
+                        General Advice
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {renderStructuredRecommendations(result.recommendations)}
+                </CardContent>
+            </Card>
+        )}
+    </div>
+
     </div>
   );
 }
