@@ -56,25 +56,7 @@ export function PregnancyBabyTracker() {
   });
   
   const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    const email = localStorage.getItem('currentUserEmail');
-    if (!email) {
-      router.push('/signin');
-      return;
-    }
-    setCurrentUserEmail(email);
-
-    const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
-    if (savedPregnancy) {
-        const startDate = new Date(savedPregnancy);
-        const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
-        form.setValue('pregnancyWeeks', weeks > 0 ? weeks : 1, { shouldValidate: true });
-    }
-  }, [form, router]);
-
-
+  
   const fetchPregnancyProgress = useCallback((weeks: number, email: string) => {
     if (weeks >= 1 && weeks <= 42) {
         setProgressResult(null);
@@ -101,7 +83,29 @@ export function PregnancyBabyTracker() {
              }
         })
     }
-  }, [toast]);
+  }, [toast, startProgressTransition]);
+
+
+  useEffect(() => {
+    setIsClient(true);
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+      return;
+    }
+    setCurrentUserEmail(email);
+
+    const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
+    if (savedPregnancy) {
+        const startDate = new Date(savedPregnancy);
+        const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
+        if (weeks > 0) {
+            form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
+            fetchPregnancyProgress(weeks, email);
+        }
+    }
+  }, [form, router, fetchPregnancyProgress]);
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

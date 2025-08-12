@@ -36,7 +36,7 @@ const HormonalCycleNutritionInputSchema = z.object({
 export type HormonalCycleNutritionInput = z.infer<typeof HormonalCycleNutritionInputSchema>;
 
 const HormonalCycleNutritionOutputSchema = z.object({
-  recommendations: z.string().describe('Personalized nutrition and diet recommendations based on the input data. If for pregnancy, this should be a single, concise sentence focusing on one key food or nutrient.'),
+  recommendations: z.string().describe('Personalized nutrition and diet recommendations. For pregnancy, this should be a detailed paragraph covering key foods, vitamins, and minerals for the specified week.'),
 });
 export type HormonalCycleNutritionOutput = z.infer<typeof HormonalCycleNutritionOutputSchema>;
 
@@ -53,7 +53,7 @@ const prompt = ai.definePrompt({
   prompt: `You are a nutritionist specializing in hormonal and pregnancy health. 
 
 {{#if pregnancyWeek}}
-You are providing advice for a pregnant person. Your task is to provide a SINGLE, CONCISE sentence recommending a key food or nutrient for the given week of pregnancy. Keep it short and actionable.
+You are providing advice for a pregnant person. Your task is to provide a detailed paragraph with recommendations for the given week of pregnancy. Include key nutrients (like Folic Acid, Iron, Calcium, Protein), essential vitamins, and specific food examples.
 
 Pregnancy Week: {{{pregnancyWeek}}}
 {{else}}
