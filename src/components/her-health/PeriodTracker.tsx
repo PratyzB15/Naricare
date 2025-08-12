@@ -6,8 +6,6 @@ import { addDays, differenceInDays, formatISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
-import { MedicationReminderCard } from '@/components/her-health/MedicationReminderCard';
-import type { Medication } from '@/components/her-health/MedicationReminderCard';
 import { predictPeriodAction } from '@/app/actions';
 import { AlertTriangle, HeartPulse, Info, Droplet, Baby } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -37,7 +35,6 @@ export function PeriodTracker() {
 
   const [cycles, setCycles] = useState<PeriodCycle[]>([]);
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
-  const [medications, setMedications] = useState<Medication[]>([]);
   const [flowFeedback, setFlowFeedback] = useState('');
   const [pregnancyStartDate, setPregnancyStartDate] = useState<Date | null>(null);
 
@@ -61,11 +58,6 @@ export function PeriodTracker() {
       setCycles(parsedCycles);
     }
     
-    const savedMeds = localStorage.getItem(`${email}_medications`);
-    if (savedMeds) {
-        setMedications(JSON.parse(savedMeds));
-    }
-    
     const savedPregnancy = localStorage.getItem(`${email}_pregnancyStartDate`);
     if (savedPregnancy) {
         setPregnancyStartDate(new Date(savedPregnancy));
@@ -77,7 +69,6 @@ export function PeriodTracker() {
   useEffect(() => {
     if (!isClient || !currentUserEmail) return;
     localStorage.setItem(`${currentUserEmail}_periodCycles`, JSON.stringify(cycles));
-    localStorage.setItem(`${currentUserEmail}_medications`, JSON.stringify(medications));
     if (prediction) {
       localStorage.setItem(`${currentUserEmail}_periodPrediction`, JSON.stringify(prediction));
     }
@@ -86,23 +77,8 @@ export function PeriodTracker() {
     } else {
         localStorage.removeItem(`${currentUserEmail}_pregnancyStartDate`);
     }
-  }, [cycles, medications, prediction, pregnancyStartDate, isClient, currentUserEmail]);
+  }, [cycles, prediction, pregnancyStartDate, isClient, currentUserEmail]);
   
-   // Water reminder effect
-  useEffect(() => {
-    if (!isClient) return;
-    
-    const waterReminderInterval = setInterval(() => {
-        toast({
-            title: "Hydration Reminder",
-            description: "Time to drink a glass of water!",
-        });
-    }, 3 * 60 * 60 * 1000); // 3 hours in milliseconds
-
-    return () => {
-        clearInterval(waterReminderInterval);
-    };
-  }, [isClient, toast]);
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
     if(newCycles.length === 0 || pregnancyStartDate) return;
@@ -240,10 +216,6 @@ export function PeriodTracker() {
                     </CardContent>
                 </Card>
             )}
-            <MedicationReminderCard
-                medications={medications}
-                setMedications={setMedications}
-            />
         </div>
       </div>
       <div className="lg:col-span-1 flex flex-col gap-6">
