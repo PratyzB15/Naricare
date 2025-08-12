@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export type HormonalNutritionResult = {
   recommendations: string;
@@ -27,10 +28,37 @@ const formSchema = z.object({
   medicalHistory: z.string().optional(),
 });
 
+const ageBasedAdvice: { [key: string]: string } = {
+    '18-35': 'During these high-energy years, focus on a diet rich in iron (leafy greens, lentils) to combat anemia, calcium (dairy, ragi) for bone density, and adequate protein for muscle strength. Hydration is key to managing the high physical demands.',
+    '36-50': 'As your body changes, prioritize anti-inflammatory foods like turmeric, ginger, and berries to manage joint pain. Ensure you get enough Vitamin D and calcium to support bone health. Omega-3 fatty acids from fish or flaxseeds can help with joint stiffness.',
+    '50+': 'Post-menopause, bone health is critical. A diet rich in calcium and Vitamin D is essential to prevent osteoporosis. Light, regular exercise can help maintain flexibility and prevent a stooped posture. Focus on a protein-rich diet to maintain muscle mass.'
+};
+
 export function HormonalNutrition() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<HormonalNutritionResult | null>(null);
+  const [ageAdvice, setAgeAdvice] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    const email = localStorage.getItem('currentUserEmail');
+    if (!email) {
+      router.push('/signin');
+      return;
+    }
+    const profile = JSON.parse(localStorage.getItem(`${email}_userProfile`) || '{}');
+    if (profile.age) {
+        if (profile.age >= 18 && profile.age <= 35) {
+            setAgeAdvice(ageBasedAdvice['18-35']);
+        } else if (profile.age >= 36 && profile.age <= 50) {
+            setAgeAdvice(ageBasedAdvice['36-50']);
+        } else if (profile.age > 50) {
+            setAgeAdvice(ageBasedAdvice['50+']);
+        }
+    }
+  }, [router]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,6 +93,7 @@ export function HormonalNutrition() {
   };
 
   return (
+    <div className="grid md:grid-cols-2 gap-8">
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-2xl">
@@ -173,5 +202,22 @@ export function HormonalNutrition() {
         </CardContent>
       )}
     </Card>
+    {ageAdvice && (
+        <Card className="shadow-md bg-secondary/30">
+             <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                <Info />
+                Age-Based Nutritional Guidance
+                </CardTitle>
+                <CardDescription>
+                Special considerations for your current life stage.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground">{ageAdvice}</p>
+            </CardContent>
+        </Card>
+    )}
+    </div>
   );
 }

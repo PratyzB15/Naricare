@@ -6,6 +6,7 @@ import { mentalHealthChatbot, type MentalHealthChatbotInput } from '@/ai/flows/m
 import { babyHealthTracker, type BabyHealthTrackerInput } from '@/ai/flows/baby-health-tracker';
 import { getPregnancyProgress, type PregnancyProgressInput } from '@/ai/flows/pregnancy-progress';
 import { breastCancerAnalysis, type BreastCancerAnalysisInput } from '@/ai/flows/breast-cancer-analysis';
+import { detectLaborDisease, type DetectLaborDiseaseInput } from '@/ai/flows/labor-disease-detection';
 
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
@@ -66,5 +67,15 @@ export async function breastCancerAnalysisAction(input: BreastCancerAnalysisInpu
     } catch (e) {
         console.error(e);
         throw new Error('Failed to get cancer analysis from AI.');
+    }
+}
+
+export async function detectLaborDiseaseAction(input: DetectLaborDiseaseInput) {
+    try {
+        const result = await detectLaborDisease(input);
+        return result;
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to get disease detection from AI.');
     }
 }

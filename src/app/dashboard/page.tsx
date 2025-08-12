@@ -16,6 +16,7 @@ import {
   Mic,
   Globe,
   MapPin,
+  HardHat,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -78,6 +79,15 @@ const allFeatures = [
     href: '/cancer-screening',
     color: 'text-amber-600',
     bgColor: 'bg-amber-100/50',
+    userTypes: ['self'],
+  },
+  {
+    title: 'Occupational Health',
+    description: 'Check for diseases related to labor work.',
+    icon: HardHat,
+    href: '/occupational-health',
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-100/50',
     userTypes: ['self'],
   },
   {
@@ -326,5 +336,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    

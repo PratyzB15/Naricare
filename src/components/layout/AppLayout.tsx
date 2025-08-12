@@ -23,6 +23,7 @@ import {
   BookOpen,
   MapPin,
   ShieldCheck,
+  HardHat,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -78,6 +79,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/cancer-screening',
       icon: Ribbon,
       label: 'Cancer Screening',
+      userTypes: ['self'],
+    },
+    {
+      href: '/occupational-health',
+      icon: HardHat,
+      label: 'Occupational Health',
       userTypes: ['self'],
     },
     {
