@@ -21,12 +21,15 @@ export default function SignUpPage() {
   const [uniqueId, setUniqueId] = useState<string | null>(null);
   
   const generateAndStoreUniqueId = (email: string) => {
-    // A real app would use a secure, server-generated UID (e.g., UUID)
-    // and map it to the user's email on the backend.
-    // For this prototype, we'll use the email itself as the "unique id"
-    // that family members can use. It's not truly unique but works for the demo.
-    localStorage.setItem(`${email}_uniqueId`, email);
-    return email;
+    const newId = `HER${Math.floor(1000 + Math.random() * 9000)}`;
+    localStorage.setItem(`${email}_uniqueId`, newId);
+    
+    // In a real app, this map would be stored in a secure backend database.
+    const idMap = JSON.parse(localStorage.getItem('uniqueIdMap') || '{}');
+    idMap[newId] = email;
+    localStorage.setItem('uniqueIdMap', JSON.stringify(idMap));
+
+    return newId;
   }
 
   const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,7 +45,7 @@ export default function SignUpPage() {
         const age = formData.get('age') as string;
         const medicalHistory = formData.get('medicalHistory') as string;
         
-        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ name, age: parseInt(age, 10), medicalHistory }));
+        localStorage.setItem(`${email}_userProfile`, JSON.stringify({ name, age: parseInt(age, 10) || null, medicalHistory }));
         
         const newId = generateAndStoreUniqueId(email);
         setUniqueId(newId);
@@ -83,7 +86,7 @@ export default function SignUpPage() {
                         <Terminal className="h-4 w-4" />
                         <AlertTitle>Your Unique ID</AlertTitle>
                         <AlertDescription>
-                            This ID is your email address. Please save it. You can share it with family members to track your health.
+                            Please save this ID. You can share it with family members to let them track your health with your permission.
                             <p className="font-bold text-lg mt-2 break-all">{uniqueId}</p>
                         </AlertDescription>
                     </Alert>
@@ -138,8 +141,8 @@ export default function SignUpPage() {
 
             {userType === 'family' ? (
               <div className="space-y-2">
-                <Label htmlFor="femaleMemberId" className="font-semibold">Female User's Unique ID (Their Email)</Label>
-                <Input id="femaleMemberId" name="femaleMemberId" type="email" placeholder="Enter the user's email to track" required />
+                <Label htmlFor="femaleMemberId" className="font-semibold">Female User's Unique ID (HER...)</Label>
+                <Input id="femaleMemberId" name="femaleMemberId" type="text" placeholder="Enter the user's ID to track" required />
               </div>
             ) : (
                 <>
@@ -181,3 +184,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    

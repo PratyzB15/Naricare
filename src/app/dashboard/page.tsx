@@ -167,6 +167,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState<string | null>(null);
   const [userType, setUserType] = useState<UserType>('self');
   const [uniqueId, setUniqueId] = useState<string | null>(null);
+  const [targetUserEmail, setTargetUserEmail] = useState<string | null>(null);
 
   const [language, setLanguage] = useState('en');
 
@@ -187,6 +188,22 @@ export default function Dashboard() {
     setUserType(type);
     setUniqueId(id);
 
+    if (type === 'family') {
+      const idMap = JSON.parse(localStorage.getItem('uniqueIdMap') || '{}');
+      const femaleUserEmail = idMap[id];
+      if (femaleUserEmail) {
+        setTargetUserEmail(femaleUserEmail);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid ID',
+          description: `Could not find a user with the ID: ${id}`,
+        });
+      }
+    } else {
+      setTargetUserEmail(email);
+    }
+
     const savedLang = localStorage.getItem('appLanguage');
     if (savedLang && ['en', 'hi'].includes(savedLang)) {
         setLanguage(savedLang);
@@ -205,7 +222,7 @@ export default function Dashboard() {
         window.removeEventListener('storage', handleStorageChange);
     };
 
-  }, [router, language]);
+  }, [router, language, toast]);
 
   const handleSignOut = () => {
     localStorage.removeItem('currentUserEmail');
@@ -285,7 +302,7 @@ export default function Dashboard() {
 
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
-                <DashboardPeriodCard userType={userType} targetUserEmail={userType === 'family' ? uniqueId : currentUserEmail} />
+                <DashboardPeriodCard userType={userType} targetUserEmail={targetUserEmail} />
             </div>
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
             {featuresForUser.map((feature) => (
@@ -309,3 +326,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    
