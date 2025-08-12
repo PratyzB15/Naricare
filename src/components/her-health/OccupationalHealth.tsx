@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -104,7 +105,11 @@ export function OccupationalHealth() {
 
   const malnutritionForm = useForm<z.infer<typeof malnutritionFormSchema>>({
     resolver: zodResolver(malnutritionFormSchema),
-    defaultValues: { signs: [] }
+    defaultValues: { 
+        signs: [],
+        height: undefined,
+        weight: undefined
+    }
   })
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -247,7 +252,7 @@ export function OccupationalHealth() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Your Height (in cm)</FormLabel>
-                                        <FormControl><Input type="number" placeholder="e.g., 155" {...field} /></FormControl>
+                                        <FormControl><Input type="number" placeholder="e.g., 155" {...field} value={field.value || ''} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -258,7 +263,7 @@ export function OccupationalHealth() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Your Weight (in kg)</FormLabel>
-                                        <FormControl><Input type="number" placeholder="e.g., 48" {...field} /></FormControl>
+                                        <FormControl><Input type="number" placeholder="e.g., 48" {...field} value={field.value || ''} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
