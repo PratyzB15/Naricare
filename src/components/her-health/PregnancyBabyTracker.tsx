@@ -73,7 +73,11 @@ export function PregnancyBabyTracker() {
 
   const postBirthForm = useForm<z.infer<typeof postBirthFormSchema>>({
       resolver: zodResolver(postBirthFormSchema),
-      defaultValues: {},
+      defaultValues: {
+        weight: undefined,
+        height: undefined,
+        headCircumference: undefined,
+      },
   });
   
   const [isClient, setIsClient] = useState(false);
@@ -273,9 +277,9 @@ export function PregnancyBabyTracker() {
         <CardContent>
             <Form {...postBirthForm}>
                 <form onSubmit={() => {}} className="grid sm:grid-cols-2 gap-4">
-                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
                     <FormField
                         control={postBirthForm.control}
                         name="babyImage"
