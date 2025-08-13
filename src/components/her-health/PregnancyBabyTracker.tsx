@@ -11,9 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { babyHealthTrackerAction, getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
+import { babyHealthTrackerAction, getPregnancyProgressAction, getHormonalNutritionAction, babyGrowthAnalysisAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -21,6 +20,8 @@ import type { PregnancyProgressOutput } from '@/ai/flows/pregnancy-progress';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Alert, AlertTitle } from '../ui/alert';
+import { Label } from '../ui/label';
+import type { BabyGrowthAnalysisOutput } from '@/ai/flows/baby-growth-analysis';
 
 export type UltrasoundAnalysis = {
   babySizeEstimate: string;
@@ -54,13 +55,16 @@ export function PregnancyBabyTracker() {
   const [isAnalysisPending, startAnalysisTransition] = useTransition();
   const [isProgressPending, startProgressTransition] = useTransition();
   const [analysisResult, setAnalysisResult] = useState<UltrasoundAnalysis | null>(null);
+  const [babyGrowthAnalysisResult, setBabyGrowthAnalysisResult] = useState<BabyGrowthAnalysisOutput | null>(null);
   const [progressResult, setProgressResult] = useState<PregnancyProgressOutput | null>(null);
   const [postDeliveryAdvice, setPostDeliveryAdvice] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [babyPhotoPreview, setBabyPhotoPreview] = useState<string | null>(null);
   const { toast } = useToast();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [pregnancyWeeks, setPregnancyWeeks] = useState<number | null>(null);
   const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(null);
+  const [babyAge, setBabyAge] = useState<number | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -77,6 +81,7 @@ export function PregnancyBabyTracker() {
         weight: undefined,
         height: undefined,
         headCircumference: undefined,
+        babyImage: undefined,
       },
   });
   
@@ -116,6 +121,9 @@ export function PregnancyBabyTracker() {
         const startDate = new Date(savedPregnancy);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         setPregnancyWeeks(weeks);
+        const months = Math.floor(differenceInDays(new Date(), startDate) / 30.44) - (40*7/30.44); // Rough month calculation post-delivery
+        if(months > 0) setBabyAge(Math.round(months));
+
         if (weeks > 0 && weeks < 49) {
             form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
             fetchPregnancyProgress(weeks);
@@ -133,6 +141,18 @@ export function PregnancyBabyTracker() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBabyPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      postBirthForm.setValue('babyImage', file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBabyPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -183,6 +203,35 @@ export function PregnancyBabyTracker() {
     });
   };
 
+  const onPostBirthSubmit = (values: z.infer<typeof postBirthFormSchema>) => {
+    if (!babyAge) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not determine baby\'s age.' });
+        return;
+    }
+    setBabyGrowthAnalysisResult(null);
+    startAnalysisTransition(async () => {
+        try {
+            let babyImageDataUri: string | undefined;
+            if (values.babyImage) {
+                babyImageDataUri = await fileToBase64(values.babyImage);
+            }
+            const result = await babyGrowthAnalysisAction({
+                ageInMonths: babyAge,
+                weightInKg: values.weight,
+                heightInCm: values.height,
+                headCircumferenceInCm: values.headCircumference,
+                babyPhotoDataUri: babyImageDataUri,
+            });
+            setBabyGrowthAnalysisResult(result);
+            toast({ title: 'Growth Analysis Complete' });
+        } catch(e) {
+            console.error('Growth analysis failed:', e);
+            toast({ variant: 'destructive', title: 'Analysis Failed', description: 'Could not perform growth analysis.' });
+        }
+    });
+  }
+
+
   const handleConfirmWeek = () => {
     const weeks = form.getValues('pregnancyWeeks');
     if (weeks && currentUserEmail) {
@@ -207,11 +256,17 @@ export function PregnancyBabyTracker() {
   }
 
   const handleDeliveryTypeSubmit = () => {
+      let advice = "";
       if (deliveryType === 'normal') {
-          setPostDeliveryAdvice("Focus on rest and hydration. Start with gentle walks and pelvic floor exercises (Kegels) as you feel comfortable. Avoid heavy lifting for at least 6 weeks. A balanced diet rich in iron and protein will aid recovery.");
+          advice = `**Recovery Focus**: Rest and hydration are key. Start with gentle walks and pelvic floor exercises (Kegels) as you feel comfortable. 
+- **Activity**: Avoid heavy lifting for at least 6 weeks. 
+- **Diet**: A balanced diet rich in iron and protein will aid recovery.`;
       } else if (deliveryType === 'c-section') {
-          setPostDeliveryAdvice("Your body needs more time to heal. Avoid lifting anything heavier than your baby for 6-8 weeks. Keep your incision clean and dry. Watch for signs of infection like redness or pus. Walking is a great way to start moving, but avoid strenuous core exercises until your doctor gives you the okay.");
+          advice = `**Recovery Focus**: Your body needs more time to heal. Keep your incision clean and dry. Watch for signs of infection like redness or pus.
+- **Activity**: Avoid lifting anything heavier than your baby for 6-8 weeks. Walking is a great way to start moving, but avoid strenuous core exercises until your doctor gives you the okay.
+- **Diet**: Focus on anti-inflammatory foods and protein.`;
       }
+      setPostDeliveryAdvice(advice);
 
       startAnalysisTransition(async () => {
           try {
@@ -222,6 +277,26 @@ export function PregnancyBabyTracker() {
           }
       });
   }
+
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g).filter(part => part.trim() !== '');
+    return (
+        <div className="space-y-4 text-sm">
+            {parts.map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <h4 key={index} className="font-bold text-md text-foreground">{part.replace(/\*\*/g, '')}</h4>;
+                }
+                const listItems = part.split(/-\s/g).filter(item => item.trim() !== '');
+                return (
+                    <ul key={index} className="list-disc list-inside text-muted-foreground space-y-1">
+                        {listItems.map((item, i) => <li key={i}>{item.trim()}</li>)}
+                    </ul>
+                );
+            })}
+        </div>
+    );
+  };
+
 
   if (!isClient) return null;
 
@@ -261,8 +336,8 @@ export function PregnancyBabyTracker() {
                 <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
                 {postDeliveryAdvice && (
                     <Alert className="whitespace-pre-wrap">
-                        <AlertTitle>Personalized Recovery Plan</AlertTitle>
-                        <CardDescription>{postDeliveryAdvice}</CardDescription>
+                        <AlertTitle className="mb-2 font-bold">Personalized Recovery Plan</AlertTitle>
+                        {renderFormattedText(postDeliveryAdvice)}
                     </Alert>
                 )}
             </div>
@@ -272,47 +347,72 @@ export function PregnancyBabyTracker() {
     <Card>
         <CardHeader>
              <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
-            <CardDescription>Log your baby's growth monthly to track their development.</CardDescription>
+            <CardDescription>Log your baby's growth monthly to track their development. Current Age: {babyAge || 'N/A'} months.</CardDescription>
         </CardHeader>
         <CardContent>
             <Form {...postBirthForm}>
-                <form onSubmit={() => {}} className="grid sm:grid-cols-2 gap-4">
-                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                <form onSubmit={postBirthForm.handleSubmit(onPostBirthSubmit)} className="grid sm:grid-cols-2 gap-4">
+                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
                     <FormField
                         control={postBirthForm.control}
                         name="babyImage"
-                        render={() => (
+                        render={({ field }) => (
                         <FormItem>
                             <FormLabel>Upload Baby's Photo</FormLabel>
                             <FormControl>
-                                <Input type="file" accept="image/png, image/jpeg" />
+                                <Input type="file" accept="image/png, image/jpeg" onChange={handleBabyPhotoChange} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}
                     />
-                    <Button type="submit" className="sm:col-span-2">Log Growth & Analyze</Button>
+                    {babyPhotoPreview && (
+                        <div className="relative group sm:col-span-2">
+                        <p className="text-sm font-medium mb-2">Baby Photo Preview:</p>
+                        <img src={babyPhotoPreview} alt="Baby preview" className="rounded-lg w-full object-cover" />
+                        <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-2 right-2 h-6 w-6"
+                            onClick={() => {
+                                setBabyPhotoPreview(null);
+                                postBirthForm.resetField('babyImage');
+                            }}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                        </div>
+                    )}
+
+                    <Button type="submit" className="sm:col-span-2" disabled={isAnalysisPending}>
+                        {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Log Growth & Analyze
+                    </Button>
                 </form>
                 </Form>
         </CardContent>
     </Card>
     <Card>
         <CardHeader>
-            <AlertTitle>AI Analysis</AlertTitle>
+            <AlertTitle>AI Baby Growth Analysis</AlertTitle>
             <CardDescription>
-                Analysis of your baby's growth and development will appear here after you log their details.
+                Analysis of your baby's growth and development will appear here.
             </CardDescription>
         </CardHeader>
         <CardContent>
-            <Alert>
-                <Activity className="h-4 w-4" />
-                <AlertTitle>AI Analysis</AlertTitle>
-                <CardDescription>
-                    Analysis of your baby's growth and development will appear here after you log their details.
-                </CardDescription>
-            </Alert>
+             {isAnalysisPending && babyGrowthAnalysisResult === null ? (
+                <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+                ) : babyGrowthAnalysisResult ? (
+                    renderFormattedText(babyGrowthAnalysisResult.analysis)
+                ) : (
+                <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
+                    <p className="text-muted-foreground">Submit your baby's details to get an AI-powered growth report.</p>
+                </div>
+            )}
         </CardContent>
     </Card>
     </div>
@@ -435,7 +535,7 @@ export function PregnancyBabyTracker() {
                 </div>
 
                 <div className="space-y-4 pt-8 md:pt-0">
-                    {isAnalysisPending ? (
+                    {isAnalysisPending && analysisResult === null ? (
                     <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
