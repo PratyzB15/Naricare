@@ -28,7 +28,7 @@ const PregnancyProgressOutputSchema = z.object({
     .describe(
       "A simple and relatable comparison of the baby's size to a common fruit, vegetable, or seed (e.g., 'a poppy seed', 'a lime', 'an avocado')."
     ),
-    motherSymptoms: z.string().describe("A one-paragraph summary of common symptoms the mother might be experiencing during this week, such as nausea, fatigue, or body changes.")
+    motherSymptoms: z.string().describe("A detailed description of common symptoms the mother might be experiencing during this week, such as nausea, fatigue, or body changes.")
 });
 export type PregnancyProgressOutput = z.infer<typeof PregnancyProgressOutputSchema>;
 
@@ -46,9 +46,9 @@ const prompt = ai.definePrompt({
 You are an expert embryologist and gynecologist. Your task is to provide a clear, reassuring, and scientifically accurate summary of fetal development and maternal symptoms for a specific week of pregnancy.
 
 Based on your expert knowledge for week {{{pregnancyWeeks}}}, provide the following:
-1.  **fetalDevelopment**: A concise, single-paragraph summary of the most important developmental milestones for that week. Mention key organ development, new abilities, and other significant changes.
+1.  **fetalDevelopment**: A detailed description of the most important developmental milestones for that week. Mention key organ development, new abilities, and other significant changes.
 2.  **babySizeComparison**: A simple, relatable comparison of the baby's size to a common fruit, vegetable, or seed (e.g., 'a poppy seed', 'a lime', 'an avocado').
-3.  **motherSymptoms**: A concise, single-paragraph summary of the common physical and emotional symptoms a mother might experience this week (e.g., morning sickness, fatigue, backaches, mood changes).
+3.  **motherSymptoms**: A detailed summary of the common physical and emotional symptoms a mother might experience this week (e.g., morning sickness, fatigue, backaches, mood changes).
 
 Your tone should be informative and encouraging for an expecting mother.
 `,
