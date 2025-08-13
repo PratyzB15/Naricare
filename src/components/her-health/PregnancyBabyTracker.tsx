@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Baby, Loader2, UploadCloud, X, BrainCircuit, HeartPulse, ListChecks, Dna, Activity } from 'lucide-react';
+import { Baby, Loader2, UploadCloud, X, BrainCircuit, HeartPulse, ListChecks, Dna, Activity, CalendarClock } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { babyHealthTrackerAction, getPregnancyProgressAction, getHormonalNutritionAction, babyGrowthAnalysisAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, differenceInMonths, subMonths } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { PregnancyProgressOutput } from '@/ai/flows/pregnancy-progress';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
@@ -41,6 +40,10 @@ const formSchema = z.object({
   ),
 });
 
+const initialBabyAgeSchema = z.object({
+    ageInMonths: z.coerce.number().min(0, "Age must be positive.").max(36, "This tracker supports up to 36 months."),
+});
+
 const postBirthFormSchema = z.object({
     weight: z.coerce.number().optional(),
     height: z.coerce.number().optional(),
@@ -49,6 +52,15 @@ const postBirthFormSchema = z.object({
 });
 
 type DeliveryType = "normal" | "c-section";
+
+function formatBabyAge(totalMonths: number): string {
+    if (totalMonths < 12) {
+        return `${totalMonths} month${totalMonths === 1 ? '' : 's'}`;
+    }
+    const years = Math.floor(totalMonths / 12);
+    return `${years} year${years > 1 ? 's' : ''} (${totalMonths} months)`;
+}
+
 
 export function PregnancyBabyTracker() {
   const router = useRouter();
@@ -64,7 +76,10 @@ export function PregnancyBabyTracker() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [pregnancyWeeks, setPregnancyWeeks] = useState<number | null>(null);
   const [deliveryType, setDeliveryType] = useState<DeliveryType | null>(null);
-  const [babyAge, setBabyAge] = useState<number | null>(null);
+  const [babyBirthDate, setBabyBirthDate] = useState<Date | null>(null);
+  const [babyAgeInMonths, setBabyAgeInMonths] = useState<number | null>(null);
+  
+  const [isClient, setIsClient] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,6 +88,11 @@ export function PregnancyBabyTracker() {
       additionalNotes: '',
       ultrasoundImage: undefined,
     },
+  });
+  
+  const initialBabyAgeForm = useForm<z.infer<typeof initialBabyAgeSchema>>({
+      resolver: zodResolver(initialBabyAgeSchema),
+      defaultValues: { ageInMonths: undefined },
   });
 
   const postBirthForm = useForm<z.infer<typeof postBirthFormSchema>>({
@@ -84,8 +104,6 @@ export function PregnancyBabyTracker() {
         babyImage: undefined,
       },
   });
-  
-  const [isClient, setIsClient] = useState(false);
   
   const fetchPregnancyProgress = useCallback((weeks: number) => {
     if (weeks >= 1 && weeks <= 42) {
@@ -121,17 +139,38 @@ export function PregnancyBabyTracker() {
         const startDate = new Date(savedPregnancy);
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         setPregnancyWeeks(weeks);
-        const months = Math.floor(differenceInDays(new Date(), startDate) / 30.44) - (40*7/30.44); // Rough month calculation post-delivery
-        if(months > 0) setBabyAge(Math.round(months));
 
         if (weeks > 0 && weeks < 49) {
             form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
             fetchPregnancyProgress(weeks);
         } else if (weeks >= 49) {
             form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
+            const savedBirthDate = localStorage.getItem(`${email}_babyBirthDate`);
+            if (savedBirthDate) {
+                const birthDate = new Date(savedBirthDate);
+                setBabyBirthDate(birthDate);
+                setBabyAgeInMonths(differenceInMonths(new Date(), birthDate));
+
+                const lastLog = localStorage.getItem(`${email}_lastGrowthLog`);
+                if (lastLog) {
+                    if (differenceInDays(new Date(), new Date(lastLog)) > 30) {
+                         toast({
+                            title: "Monthly Check-in Reminder",
+                            description: "It's time to log your baby's growth for this month!",
+                            duration: 10000,
+                        });
+                    }
+                } else {
+                     toast({
+                        title: "Welcome to Baby Growth Tracking!",
+                        description: "Don't forget to log your baby's growth for the first time.",
+                        duration: 10000,
+                    });
+                }
+            }
         }
     }
-  }, [form, router, fetchPregnancyProgress]);
+  }, [form, router, fetchPregnancyProgress, toast]);
 
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,7 +243,7 @@ export function PregnancyBabyTracker() {
   };
 
   const onPostBirthSubmit = (values: z.infer<typeof postBirthFormSchema>) => {
-    if (!babyAge) {
+    if (babyAgeInMonths === null) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not determine baby\'s age.' });
         return;
     }
@@ -216,13 +255,16 @@ export function PregnancyBabyTracker() {
                 babyImageDataUri = await fileToBase64(values.babyImage);
             }
             const result = await babyGrowthAnalysisAction({
-                ageInMonths: babyAge,
+                ageInMonths: babyAgeInMonths,
                 weightInKg: values.weight,
                 heightInCm: values.height,
                 headCircumferenceInCm: values.headCircumference,
                 babyPhotoDataUri: babyImageDataUri,
             });
             setBabyGrowthAnalysisResult(result);
+            if (currentUserEmail) {
+                localStorage.setItem(`${currentUserEmail}_lastGrowthLog`, new Date().toISOString());
+            }
             toast({ title: 'Growth Analysis Complete' });
         } catch(e) {
             console.error('Growth analysis failed:', e);
@@ -255,6 +297,20 @@ export function PregnancyBabyTracker() {
     }
   }
 
+  const handleInitialAgeSubmit = (values: z.infer<typeof initialBabyAgeSchema>) => {
+      const { ageInMonths } = values;
+      const birthDate = subMonths(new Date(), ageInMonths);
+      setBabyBirthDate(birthDate);
+      setBabyAgeInMonths(ageInMonths);
+      if (currentUserEmail) {
+          localStorage.setItem(`${currentUserEmail}_babyBirthDate`, birthDate.toISOString());
+      }
+      toast({
+          title: 'Baby\'s Age Logged!',
+          description: 'The app will now track your baby\'s age automatically.',
+      });
+  }
+
   const handleDeliveryTypeSubmit = () => {
       let advice = "";
       if (deliveryType === 'normal') {
@@ -273,7 +329,7 @@ export function PregnancyBabyTracker() {
             const nutrition = await getHormonalNutritionAction({ postDelivery: true });
             setPostDeliveryAdvice(prev => `${prev}\n\n${nutrition.recommendations}`);
           } catch(e) {
-            // handle error
+             console.error("Failed to get post-delivery nutrition", e);
           }
       });
   }
@@ -302,119 +358,153 @@ export function PregnancyBabyTracker() {
 
   const renderPostDelivery = () => (
     <div className="md:col-span-2 grid gap-8">
-    <Card className="bg-pink-50/50">
-        <CardHeader>
-            <CardTitle>Post-Delivery & Baby Growth</CardTitle>
-            <CardDescription>Congratulations! Track your recovery and your baby's development.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8">
-             <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Your Recovery</h3>
-                <Label className="font-semibold">How was your delivery?</Label>
-                 <RadioGroup onValueChange={(v: DeliveryType) => setDeliveryType(v)} className="grid grid-cols-2 gap-4 mt-2">
-                    <Label 
-                    htmlFor="normal"
-                    className={cn(
-                        "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                        deliveryType === 'normal' && "border-pink-500"
-                    )}
-                    >
-                    <RadioGroupItem value="normal" id="normal" className="sr-only" />
-                    <span>Normal Delivery</span>
-                    </Label>
-                    <Label 
-                    htmlFor="c-section"
-                    className={cn(
-                        "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                        deliveryType === 'c-section' && "border-pink-500"
-                    )}
-                    >
-                    <RadioGroupItem value="c-section" id="c-section" className="sr-only"/>
-                    <span>C-Section</span>
-                    </Label>
-                </RadioGroup>
-                <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
-                {postDeliveryAdvice && (
-                    <Alert className="whitespace-pre-wrap">
-                        <AlertTitle className="mb-2 font-bold">Personalized Recovery Plan</AlertTitle>
-                        {renderFormattedText(postDeliveryAdvice)}
-                    </Alert>
-                )}
-            </div>
-            </CardContent>
-    </Card>
-
-    <Card>
-        <CardHeader>
-             <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
-            <CardDescription>Log your baby's growth monthly to track their development. Current Age: {babyAge || 'N/A'} months.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Form {...postBirthForm}>
-                <form onSubmit={postBirthForm.handleSubmit(onPostBirthSubmit)} className="grid sm:grid-cols-2 gap-4">
-                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                    <FormField
-                        control={postBirthForm.control}
-                        name="babyImage"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Upload Baby's Photo</FormLabel>
-                            <FormControl>
-                                <Input type="file" accept="image/png, image/jpeg" onChange={handleBabyPhotoChange} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    {babyPhotoPreview && (
-                        <div className="relative group sm:col-span-2">
-                        <p className="text-sm font-medium mb-2">Baby Photo Preview:</p>
-                        <img src={babyPhotoPreview} alt="Baby preview" className="rounded-lg w-full object-cover" />
-                        <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={() => {
-                                setBabyPhotoPreview(null);
-                                postBirthForm.resetField('babyImage');
-                            }}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
+        {!babyBirthDate ? (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Welcome to Motherhood!</CardTitle>
+                    <CardDescription>To get started, please log your baby's current age once.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...initialBabyAgeForm}>
+                        <form onSubmit={initialBabyAgeForm.handleSubmit(handleInitialAgeSubmit)} className="flex items-end gap-4">
+                             <FormField
+                                control={initialBabyAgeForm.control}
+                                name="ageInMonths"
+                                render={({ field }) => (
+                                    <FormItem className="flex-grow">
+                                    <FormLabel>Baby's Current Age (in months)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g., 2" {...field} value={field.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit">Log Age</Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        ) : (
+            <>
+                <Card className="bg-pink-50/50">
+                    <CardHeader>
+                        <CardTitle>Post-Delivery & Baby Growth</CardTitle>
+                        <CardDescription>Congratulations! Track your recovery and your baby's development.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg">Your Recovery</h3>
+                            <Label className="font-semibold">How was your delivery?</Label>
+                            <RadioGroup onValueChange={(v: DeliveryType) => setDeliveryType(v)} className="grid grid-cols-2 gap-4 mt-2">
+                                <Label
+                                htmlFor="normal"
+                                className={cn(
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                    deliveryType === 'normal' && "border-pink-500"
+                                )}
+                                >
+                                <RadioGroupItem value="normal" id="normal" className="sr-only" />
+                                <span>Normal Delivery</span>
+                                </Label>
+                                <Label
+                                htmlFor="c-section"
+                                className={cn(
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                    deliveryType === 'c-section' && "border-pink-500"
+                                )}
+                                >
+                                <RadioGroupItem value="c-section" id="c-section" className="sr-only"/>
+                                <span>C-Section</span>
+                                </Label>
+                            </RadioGroup>
+                            <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
+                            {postDeliveryAdvice && (
+                                <Alert className="whitespace-pre-wrap">
+                                    <AlertTitle className="mb-2 font-bold">Personalized Recovery Plan</AlertTitle>
+                                    {renderFormattedText(postDeliveryAdvice)}
+                                </Alert>
+                            )}
                         </div>
-                    )}
+                    </CardContent>
+                </Card>
 
-                    <Button type="submit" className="sm:col-span-2" disabled={isAnalysisPending}>
-                        {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Log Growth & Analyze
-                    </Button>
-                </form>
-                </Form>
-        </CardContent>
-    </Card>
-    <Card>
-        <CardHeader>
-            <AlertTitle>AI Baby Growth Analysis</AlertTitle>
-            <CardDescription>
-                Analysis of your baby's growth and development will appear here.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-             {isAnalysisPending && babyGrowthAnalysisResult === null ? (
-                <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-                ) : babyGrowthAnalysisResult ? (
-                    renderFormattedText(babyGrowthAnalysisResult.analysis)
-                ) : (
-                <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
-                    <p className="text-muted-foreground">Submit your baby's details to get an AI-powered growth report.</p>
-                </div>
-            )}
-        </CardContent>
-    </Card>
+                <Card>
+                    <CardHeader>
+                        <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
+                        <CardDescription>
+                            Log your baby's growth monthly to track their development.
+                             <span className="block font-medium text-primary mt-1">Current Age: {babyAgeInMonths !== null ? formatBabyAge(babyAgeInMonths) : 'N/A'}</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...postBirthForm}>
+                            <form onSubmit={postBirthForm.handleSubmit(onPostBirthSubmit)} className="grid sm:grid-cols-2 gap-4">
+                                    <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 3.5" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                    <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 50" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                    <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 34" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                <FormField
+                                    control={postBirthForm.control}
+                                    name="babyImage"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Upload Baby's Photo (Optional)</FormLabel>
+                                        <FormControl>
+                                            <Input type="file" accept="image/png, image/jpeg" onChange={handleBabyPhotoChange} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                {babyPhotoPreview && (
+                                    <div className="relative group sm:col-span-2">
+                                    <p className="text-sm font-medium mb-2">Baby Photo Preview:</p>
+                                    <img src={babyPhotoPreview} alt="Baby preview" className="rounded-lg w-full object-cover" />
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-6 w-6"
+                                        onClick={() => {
+                                            setBabyPhotoPreview(null);
+                                            postBirthForm.resetField('babyImage');
+                                        }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                    </div>
+                                )}
+
+                                <Button type="submit" className="sm:col-span-2" disabled={isAnalysisPending}>
+                                    {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Log Growth & Analyze
+                                </Button>
+                            </form>
+                            </Form>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <AlertTitle>AI Baby Growth Analysis</AlertTitle>
+                        <CardDescription>
+                            Analysis of your baby's growth and development will appear here.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isAnalysisPending && babyGrowthAnalysisResult === null ? (
+                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                            ) : babyGrowthAnalysisResult ? (
+                                renderFormattedText(babyGrowthAnalysisResult.analysis)
+                            ) : (
+                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
+                                <p className="text-muted-foreground">Submit your baby's details to get an AI-powered growth report.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </>
+        )}
     </div>
   );
 
