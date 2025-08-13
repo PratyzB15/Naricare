@@ -95,11 +95,11 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
             flowLight: flowDays.light,
           }}
           modifiersClassNames={{
-            period: 'bg-destructive/80 text-destructive-foreground rounded-none',
-            predicted: 'bg-pink-200/50 text-pink-800 rounded-none',
-            flowHeavy: 'bg-red-700 text-white rounded-none',
-            flowMedium: 'bg-red-500 text-white rounded-none',
-            flowLight: 'bg-red-300 text-white rounded-none',
+            period: 'bg-destructive/80 text-destructive-foreground',
+            predicted: 'bg-pink-200/50 text-pink-800',
+            flowHeavy: 'bg-red-700 text-white',
+            flowMedium: 'bg-red-500 text-white',
+            flowLight: 'bg-red-300 text-white',
             today: 'border-2 border-primary rounded-full'
           }}
           className="p-0"

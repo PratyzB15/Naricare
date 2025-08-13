@@ -161,22 +161,8 @@ export function PeriodTracker() {
     }
   };
 
-  const handlePregnant = () => {
-    if (!currentUserEmail) return;
-    const lastCycleEnd = cycles.length > 0 ? cycles[cycles.length - 1].end : new Date();
-    // Set pregnancy start date based on last cycle
-    const approxPregnancyStartDate = new Date(lastCycleEnd);
-    approxPregnancyStartDate.setDate(approxPregnancyStartDate.getDate() + 7); // Approximate conception
-    setPregnancyStartDate(approxPregnancyStartDate);
-    toast({
-        title: "Congratulations!",
-        description: "Period tracking is now paused. Redirecting you to the Pregnancy Tracker.",
-    });
-    router.push('/pregnancy-baby-tracker');
-  }
-
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
-  const cycleHistory = cycles;
+  const cycleHistory = cycles.slice().reverse();
   const pregnancyWeeks = pregnancyStartDate ? Math.floor(differenceInDays(new Date(), pregnancyStartDate) / 7) : null;
 
 
@@ -197,7 +183,6 @@ export function PeriodTracker() {
                 </AlertDescription>
                 <CardContent className="pt-4 px-0">
                     <p>Congratulations! Your period tracker is paused. Head over to the Pregnancy & Baby Tracker for weekly updates on your baby's development.</p>
-                    <Button className="mt-4" onClick={() => setPregnancyStartDate(null)}>End Pregnancy</Button>
                 </CardContent>
              </Alert>
          </div>
@@ -212,7 +197,7 @@ export function PeriodTracker() {
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-1 gap-6">
             {prediction?.flowPrediction && (
                 <Card>
                     <CardHeader>
@@ -235,18 +220,6 @@ export function PeriodTracker() {
                     </CardContent>
                 </Card>
             )}
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Baby/>
-                        Are you Pregnant?
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm mb-4">If you've confirmed a pregnancy, you can pause period tracking here.</p>
-                    <Button onClick={handlePregnant}>I'm Pregnant</Button>
-                </CardContent>
-            </Card>
         </div>
       </div>
       <div className="lg:col-span-1 flex flex-col gap-6">
@@ -278,7 +251,7 @@ export function PeriodTracker() {
                     <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
                         {cycleHistory.map((cycle, index) => (
                              <li key={index}>
-                                {`Month ${index + 1}: ${cycle.start.toLocaleDateString()} - ${cycle.end.toLocaleDateString()}`}
+                                {`Cycle ${cycleHistory.length - index}: ${cycle.start.toLocaleDateString()} - ${cycle.end.toLocaleDateString()}`}
                             </li>
                         ))}
                     </ul>
