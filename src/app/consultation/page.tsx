@@ -73,6 +73,21 @@ const BookingDialog = ({ doctor }: { doctor: (typeof doctors)[0] }) => {
         toast({ title: 'Copied to clipboard!' });
     };
 
+    const handlePayment = () => {
+        toast({
+            title: 'Redirecting to Payment',
+            description: 'You will be redirected to a secure payment gateway.',
+        });
+        // In a real app, you would redirect to a payment URL.
+        // For this prototype, we'll just show a success message after a delay.
+        setTimeout(() => {
+            toast({
+                title: 'Payment Successful!',
+                description: `Your payment of ₹${doctor.fee} has been received.`,
+            })
+        }, 2000);
+    }
+
 
     const renderStepOne = () => (
         <>
@@ -163,7 +178,7 @@ const BookingDialog = ({ doctor }: { doctor: (typeof doctors)[0] }) => {
                     <div>
                         <h4 className="font-semibold">Online Consultation</h4>
                         <p className="text-sm text-muted-foreground">A Google Meet link will be sent to your registered email and phone number 15 minutes before your scheduled time.</p>
-                        <Button className="mt-2 w-full">Pay ₹{doctor.fee} Now</Button>
+                        <Button className="mt-2 w-full" onClick={handlePayment}>Pay ₹{doctor.fee} Now</Button>
                     </div>
                 )}
             </div>
