@@ -13,7 +13,7 @@ export default function PrivacyPage() {
           <CardContent className="prose prose-sm max-w-none">
             <h3>User Data Handling</h3>
             <p>
-              Thank you for trying out HerHealthAI! This application is currently a prototype designed to showcase functionality.
+              Thank you for trying out NariCare! This application is currently a prototype designed to showcase functionality.
               To provide a personalized and persistent experience without requiring a full backend database and authentication system,
               this app uses your browser's <strong>Local Storage</strong>.
             </p>

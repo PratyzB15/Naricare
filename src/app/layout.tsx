@@ -12,8 +12,8 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'HerHealthAI',
-  description: 'Track your health with HerHealthAI',
+  title: 'NariCare',
+  description: 'Track your health with NariCare',
 };
 
 export default function RootLayout({

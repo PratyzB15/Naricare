@@ -78,7 +78,7 @@ export default function SignUpPage() {
           <div className="flex items-center justify-center min-h-screen bg-background px-4">
               <Card className="w-full max-w-md p-6">
                 <CardHeader>
-                    <CardTitle>Welcome to HerHealthAI!</CardTitle>
+                    <CardTitle>Welcome to NariCare!</CardTitle>
                     <CardDescription>Your account has been created successfully.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -103,7 +103,7 @@ export default function SignUpPage() {
         <CardHeader className="text-center space-y-2">
           <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
           <CardDescription>
-            Join HerHealthAI to take control of your health.
+            Join NariCare to take control of your health.
           </CardDescription>
         </CardHeader>
         <CardContent>

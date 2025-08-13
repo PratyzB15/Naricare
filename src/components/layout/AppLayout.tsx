@@ -132,7 +132,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <HeartPulse className="h-6 w-6 text-primary" />
-              <span className="text-lg font-semibold">HerHealthAI</span>
+              <span className="text-lg font-semibold">NariCare</span>
             </div>
           </SidebarHeader>
           <SidebarMenu className="flex-1">
