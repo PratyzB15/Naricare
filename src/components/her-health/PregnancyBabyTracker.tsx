@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect, useCallback } from 'react';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { babyHealthTrackerAction, getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -207,7 +209,7 @@ export function PregnancyBabyTracker() {
           setPostDeliveryAdvice("Your body needs more time to heal. Avoid lifting anything heavier than your baby for 6-8 weeks. Keep your incision clean and dry. Watch for signs of infection like redness or pus. Walking is a great way to start moving, but avoid strenuous core exercises until your doctor gives you the okay.");
       }
 
-      startTransition(async () => {
+      startAnalysisTransition(async () => {
           try {
             const nutrition = await getHormonalNutritionAction({ postDelivery: true });
             setPostDeliveryAdvice(prev => `${prev}\n\n${nutrition.recommendations}`);
