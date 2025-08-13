@@ -101,7 +101,7 @@ const prompt = ai.definePrompt({
 2. Based on their symptoms, identify the single most likely condition.
 3. Provide the corresponding 'Possible Condition / Cause' as 'cause', 'Prevention' as 'prevention', and 'Medication/Treatment' as 'medication'.
 4. Rename the 'Symptom / Discomfort' or 'Disease / Condition' or 'Symptom / Issue' column to 'disease' in the output.
-`,
+`
 });
 
 const detectOccupationalDiseaseFlow = ai.defineFlow(

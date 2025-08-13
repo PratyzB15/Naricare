@@ -50,6 +50,22 @@ export function HormonalNutrition() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
 
+  const cycleForm = useForm<z.infer<typeof cycleFormSchema>>({
+    resolver: zodResolver(cycleFormSchema),
+    defaultValues: { cyclePhase: 'menstruation', mood: '', physicalSymptoms: '', dietaryPreferences: '', medicalHistory: '' },
+  });
+
+  const pregnancyForm = useForm<z.infer<typeof pregnancyFormSchema>>({
+    resolver: zodResolver(pregnancyFormSchema),
+    defaultValues: { pregnancyTrimester: 1, dietaryPreferences: '', medicalHistory: '' },
+  });
+  
+  const babyForm = useForm<z.infer<typeof babyFormSchema>>({
+      resolver: zodResolver(babyFormSchema),
+      defaultValues: { babyAgeInMonths: undefined },
+  });
+
+
   useEffect(() => {
     setIsClient(true);
     const email = localStorage.getItem('currentUserEmail');
@@ -63,7 +79,16 @@ export function HormonalNutrition() {
     if (savedMeds) {
         setMedications(JSON.parse(savedMeds));
     }
-  }, [router]);
+
+    const savedProfile = localStorage.getItem(`${email}_userProfile`);
+    if (savedProfile) {
+        const profile = JSON.parse(savedProfile);
+        if (profile.medicalHistory) {
+            cycleForm.setValue('medicalHistory', profile.medicalHistory);
+            pregnancyForm.setValue('medicalHistory', profile.medicalHistory);
+        }
+    }
+  }, [router, cycleForm, pregnancyForm]);
   
   useEffect(() => {
     if (!isClient || !currentUserEmail) return;
@@ -85,21 +110,6 @@ export function HormonalNutrition() {
         clearInterval(waterReminderInterval);
     };
   }, [isClient, toast]);
-
-  const cycleForm = useForm<z.infer<typeof cycleFormSchema>>({
-    resolver: zodResolver(cycleFormSchema),
-    defaultValues: { cyclePhase: 'menstruation', mood: '', physicalSymptoms: '', dietaryPreferences: '', medicalHistory: '' },
-  });
-
-  const pregnancyForm = useForm<z.infer<typeof pregnancyFormSchema>>({
-    resolver: zodResolver(pregnancyFormSchema),
-    defaultValues: { pregnancyTrimester: 1, dietaryPreferences: '', medicalHistory: '' },
-  });
-  
-  const babyForm = useForm<z.infer<typeof babyFormSchema>>({
-      resolver: zodResolver(babyFormSchema),
-      defaultValues: { babyAgeInMonths: undefined },
-  });
 
   const handleFormSubmit = (values: any, type: 'cycle' | 'pregnancy' | 'baby') => {
     setResult(null);
@@ -236,7 +246,7 @@ export function HormonalNutrition() {
                     <FormField control={cycleForm.control} name="mood" render={({ field }) => (<FormItem><FormLabel>Current Mood (optional)</FormLabel><FormControl><Input placeholder="e.g., Happy, Anxious, Irritable" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={cycleForm.control} name="physicalSymptoms" render={({ field }) => (<FormItem><FormLabel>Physical Symptoms (optional)</FormLabel><FormControl><Textarea placeholder="e.g., cramps, bloating, headaches" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={cycleForm.control} name="dietaryPreferences" render={({ field }) => (<FormItem><FormLabel>Dietary Preferences (optional)</FormLabel><FormControl><Input placeholder="e.g., Vegan, Gluten-free" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={cycleForm.control} name="medicalHistory" render={({ field }) => (<FormItem><FormLabel>Medical History (optional)</FormLabel><FormControl><Input placeholder="e.g., PCOS, Thyroid issues" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={cycleForm.control} name="medicalHistory" render={({ field }) => (<FormItem><FormLabel>Medical History (pre-filled from profile)</FormLabel><FormControl><Input placeholder="e.g., PCOS, Thyroid issues" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <Button type="submit" disabled={isPending} className="w-full">
                       {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <HeartPulse className="mr-2 h-4 w-4" />}
                       Get Cycle Advice
@@ -270,7 +280,7 @@ export function HormonalNutrition() {
                       )}
                     />
                     <FormField control={pregnancyForm.control} name="dietaryPreferences" render={({ field }) => (<FormItem><FormLabel>Dietary Preferences (optional)</FormLabel><FormControl><Input placeholder="e.g., Vegetarian, Low-carb" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={pregnancyForm.control} name="medicalHistory" render={({ field }) => (<FormItem><FormLabel>Medical History (optional)</FormLabel><FormControl><Input placeholder="e.g., Gestational Diabetes" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={pregnancyForm.control} name="medicalHistory" render={({ field }) => (<FormItem><FormLabel>Medical History (pre-filled from profile)</FormLabel><FormControl><Input placeholder="e.g., Gestational Diabetes" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <Button type="submit" disabled={isPending} className="w-full">
                       {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <HeartPulse className="mr-2 h-4 w-4" />}
                       Get Pregnancy Advice
