@@ -62,9 +62,9 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         setPregnancyWeeks(weeks);
 
-        if (weeks > 51) {
-            // Pregnancy ended, clear storage
+        if (weeks > 57) { // Pregnancy ended, clear storage
             localStorage.removeItem(`${targetUserEmail}_pregnancyStartDate`);
+            localStorage.removeItem(`${targetUserEmail}_babyBirthDate`);
             setPregnancyStartDate(null);
             setPregnancyWeeks(null);
             // Reload period data
@@ -78,7 +78,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
             return;
         }
         
-        if (weeks > 0 && weeks <= 42) {
+        if (weeks > 0 && weeks <= 55) {
              startTransition(async () => {
                 try {
                     const [progress, nutrition] = await Promise.all([
@@ -140,7 +140,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
     return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
   }
 
-  if (pregnancyWeeks && pregnancyWeeks >= 49) {
+  if (pregnancyWeeks && pregnancyWeeks >= 50) {
       return (
          <Card className="shadow-md h-full flex flex-col bg-pink-50/50">
             <CardHeader>
@@ -152,6 +152,14 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
             </CardHeader>
             <CardContent className="flex-grow">
                 <p>Please go to the Pregnancy &amp; Baby Tracker to log your baby's details and get personalized advice for your recovery.</p>
+                 {pregnancyInfo && (
+                     <div className='mt-4'>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Utensils className="h-4 w-4" /> Nutrition Tip</p>
+                        <p className="font-medium text-base">
+                            {pregnancyInfo.nutritionTip}
+                        </p>
+                    </div>
+                 )}
             </CardContent>
             {userType === 'self' && (
                 <CardContent>

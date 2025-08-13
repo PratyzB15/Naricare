@@ -13,7 +13,7 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { useRouter } from 'next/navigation';
-import { Alert } from '../ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 export type PeriodCycle = { start: Date; end: Date };
 
@@ -159,24 +159,25 @@ export function PeriodTracker() {
 
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
   const cycleHistory = cycles.slice(-2);
+  const pregnancyWeeks = pregnancyStartDate ? Math.floor(differenceInDays(new Date(), pregnancyStartDate) / 7) : null;
+
 
   if (!isClient || !currentUserEmail) {
       return null;
   }
   
-  if (pregnancyStartDate) {
-      const pregnancyWeeks = differenceInDays(new Date(), pregnancyStartDate) / 7;
+  if (pregnancyWeeks !== null && pregnancyWeeks < 50) {
       return (
          <div className="lg:col-span-3">
              <Alert>
                 <Baby className="h-4 w-4" />
-                <CardTitle className="flex items-center gap-2 text-2xl">
+                <AlertTitle className="flex items-center gap-2 text-2xl">
                     Pregnancy Mode
-                </CardTitle>
-                <CardDescription>
-                   Period tracking is paused during your pregnancy. You are approximately {Math.floor(pregnancyWeeks)} weeks pregnant.
-                </CardDescription>
-                <CardContent className="pt-4">
+                </AlertTitle>
+                <AlertDescription>
+                   Period tracking is paused during your pregnancy. You are approximately {pregnancyWeeks} weeks pregnant.
+                </AlertDescription>
+                <CardContent className="pt-4 px-0">
                     <p>Congratulations! Your period tracker is paused. Head over to the Pregnancy & Baby Tracker for weekly updates on your baby's development.</p>
                     <Button className="mt-4" onClick={() => setPregnancyStartDate(null)}>End Pregnancy</Button>
                 </CardContent>

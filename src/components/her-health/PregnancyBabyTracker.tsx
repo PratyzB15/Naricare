@@ -566,7 +566,7 @@ export function PregnancyBabyTracker() {
   });
   
   const fetchPregnancyProgress = useCallback((weeks: number) => {
-    if (weeks >= 1 && weeks <= 42) {
+    if (weeks >= 1 && weeks <= 57) {
         setProgressResult(null);
         startProgressTransition(async () => {
              try {
@@ -600,11 +600,12 @@ export function PregnancyBabyTracker() {
         const weeks = Math.floor(differenceInDays(new Date(), startDate) / 7);
         setPregnancyWeeks(weeks);
 
-        if (weeks > 0 && weeks < 49) {
+        if (weeks > 0 && weeks < 57) {
             form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
             fetchPregnancyProgress(weeks);
-        } else if (weeks >= 49) {
-            form.setValue('pregnancyWeeks', weeks, { shouldValidate: true });
+        }
+        
+        if (weeks >= 49) {
             const savedBirthDate = localStorage.getItem(`${email}_babyBirthDate`);
             if (savedBirthDate) {
                 const birthDate = new Date(savedBirthDate);
@@ -731,7 +732,7 @@ export function PregnancyBabyTracker() {
     const weeks = form.getValues('pregnancyWeeks');
     if (weeks && currentUserEmail) {
         setPregnancyWeeks(weeks);
-        if (weeks < 49) {
+        if (weeks < 57) {
             const today = new Date();
             const startDate = new Date(today.setDate(today.getDate() - (weeks * 7)));
             localStorage.setItem(`${currentUserEmail}_pregnancyStartDate`, startDate.toISOString());
