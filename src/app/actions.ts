@@ -6,7 +6,7 @@ import { mentalHealthChatbot, type MentalHealthChatbotInput } from '@/ai/flows/m
 import { babyHealthTracker, type BabyHealthTrackerInput } from '@/ai/flows/baby-health-tracker';
 import { getPregnancyProgress, type PregnancyProgressInput } from '@/ai/flows/pregnancy-progress';
 import { breastCancerAnalysis, type BreastCancerAnalysisInput } from '@/ai/flows/breast-cancer-analysis';
-import { detectLaborDisease, type DetectLaborDiseaseInput } from '@/ai/flows/labor-disease-detection';
+import { detectOccupationalDisease, type DetectOccupationalDiseaseInput } from '@/ai/flows/occupational-disease-detection';
 import { getBabyNutrition, type BabyNutritionInput } from '@/ai/flows/baby-nutrition-recipe';
 import { babyGrowthAnalysis, type BabyGrowthAnalysisInput } from '@/ai/flows/baby-growth-analysis';
 import { pregnancySymptomChecker, type PregnancySymptomCheckerInput } from '@/ai/flows/pregnancy-symptom-checker';
@@ -73,9 +73,9 @@ export async function breastCancerAnalysisAction(input: BreastCancerAnalysisInpu
     }
 }
 
-export async function detectLaborDiseaseAction(input: DetectLaborDiseaseInput) {
+export async function detectOccupationalDiseaseAction(input: DetectOccupationalDiseaseInput) {
     try {
-        const result = await detectLaborDisease(input);
+        const result = await detectOccupationalDisease(input);
         return result;
     } catch (e) {
         console.error(e);
