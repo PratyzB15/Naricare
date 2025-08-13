@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Baby, Loader2, UploadCloud, X, BrainCircuit, HeartPulse, ListChecks, Dna, Activity, CalendarClock } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertTitle } from '../ui/alert';
 import { Label } from '../ui/label';
 import type { BabyGrowthAnalysisOutput } from '@/ai/flows/baby-growth-analysis';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 export type UltrasoundAnalysis = {
   babySizeEstimate: string;
@@ -59,6 +60,353 @@ function formatBabyAge(totalMonths: number): string {
     }
     const years = Math.floor(totalMonths / 12);
     return `${years} year${years > 1 ? 's' : ''} (${totalMonths} months)`;
+}
+
+// Reusable component for the pre-delivery view
+const PregnancyView = ({ 
+  form, 
+  handleConfirmWeek, 
+  isProgressPending, 
+  progressResult,
+  onUltrasoundSubmit,
+  isAnalysisPending,
+  analysisResult,
+  preview,
+  setPreview
+}: {
+  form: any;
+  handleConfirmWeek: () => void;
+  isProgressPending: boolean;
+  progressResult: PregnancyProgressOutput | null;
+  onUltrasoundSubmit: (values: any) => void;
+  isAnalysisPending: boolean;
+  analysisResult: UltrasoundAnalysis | null;
+  preview: string | null;
+  setPreview: (p: string | null) => void;
+}) => {
+   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      form.setValue('ultrasoundImage', file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+     <div className="grid md:grid-cols-2 gap-8">
+        <div className="space-y-4">
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onUltrasoundSubmit)}>
+            <FormField
+            control={form.control}
+            name="pregnancyWeeks"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Pregnancy Duration (in weeks)</FormLabel>
+                <FormControl>
+                    <div className="flex gap-2">
+                        <Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} />
+                        <Button type="button" onClick={handleConfirmWeek} disabled={isProgressPending}>
+                            {isProgressPending ? <Loader2 className="h-4 w-4 animate-spin"/> : "Confirm"}
+                        </Button>
+                    </div>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            
+            <div className="p-4 rounded-lg bg-secondary/50 space-y-4 min-h-[200px] mt-4">
+                <div>
+                    <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {form.watch('pregnancyWeeks') || 'X'}: Fetal Development</h4>
+                    {isProgressPending && <Loader2 className="h-5 w-5 animate-spin mt-2" />}
+                    {progressResult && <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.fetalDevelopment}</p>}
+                    {!isProgressPending && !progressResult && <p className="text-sm text-muted-foreground">Confirm a week to see development details.</p>}
+                </div>
+                {progressResult?.motherSymptoms && (
+                     <div>
+                        <h4 className="font-semibold flex items-center gap-2 text-lg"><HeartPulse /> Your Body This Week</h4>
+                        <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.motherSymptoms}</p>
+                     </div>
+                )}
+            </div>
+
+            <FormField
+                control={form.control}
+                name="ultrasoundImage"
+                render={() => (
+                <FormItem className="mt-4">
+                    <FormLabel>Ultrasound Image (Optional)</FormLabel>
+                    <FormControl>
+                    <div className="relative border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
+                        <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-sm text-muted-foreground">
+                        Drag & drop or click to upload for AI analysis
+                        </p>
+                        <Input 
+                            type="file" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept="image/png, image/jpeg"
+                            onChange={handleFileChange} 
+                        />
+                    </div>
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            {preview && (
+                <div className="relative group mt-4">
+                <p className="text-sm font-medium mb-2">Image Preview:</p>
+                <img src={preview} alt="Ultrasound preview" className="rounded-lg w-full object-cover" />
+                <Button 
+                    variant="destructive" 
+                    size="icon" 
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => {
+                      setPreview(null);
+                      form.resetField('ultrasoundImage');
+                    }}
+                >
+                    <X className="h-4 w-4" />
+                </Button>
+                </div>
+            )}
+            <FormField
+            control={form.control}
+            name="additionalNotes"
+            render={({ field }) => (
+                <FormItem className="mt-4">
+                <FormLabel>Additional Notes for Ultrasound Analysis (optional)</FormLabel>
+                <FormControl>
+                    <Textarea placeholder="Any specific concerns or notes from your doctor..." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <Button type="submit" disabled={isAnalysisPending || !preview} className="w-full mt-4">
+                {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Analyze Ultrasound
+            </Button>
+        </form>
+        </Form>
+        </div>
+
+        <div className="space-y-4 pt-8 md:pt-0">
+            {isAnalysisPending && analysisResult === null ? (
+            <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+            ) : analysisResult ? (
+            <div className="space-y-4 pt-4">
+                <h3 className="text-xl font-semibold flex items-center gap-2"><BrainCircuit /> Ultrasound Analysis</h3>
+                <div className="p-4 rounded-lg bg-secondary">
+                    <h4 className="font-semibold flex items-center gap-2"><Baby /> Baby Size Estimate</h4>
+                    <p className="text-muted-foreground">{analysisResult.babySizeEstimate}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary">
+                    <h4 className="font-semibold flex items-center gap-2"><HeartPulse /> Health Assessment</h4>
+                    <p className="text-muted-foreground">{analysisResult.healthAssessment}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary">
+                    <h4 className="font-semibold flex items-center gap-2"><ListChecks /> Recommendations</h4>
+                    <p className="text-muted-foreground">{analysisResult.recommendations}</p>
+                </div>
+            </div>
+            ) : (
+                <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
+                    <p className="text-muted-foreground">Upload an ultrasound image and click "Analyze Ultrasound" to see the AI-powered report here.</p>
+                </div>
+            )}
+        </div>
+    </div>
+  );
+}
+
+// Reusable component for the post-delivery view
+const PostDeliveryView = ({
+    babyBirthDate,
+    babyAgeInMonths,
+    handleInitialAgeSubmit,
+    initialBabyAgeForm,
+    postBirthForm,
+    onPostBirthSubmit,
+    deliveryType,
+    setDeliveryType,
+    handleDeliveryTypeSubmit,
+    postDeliveryAdvice,
+    babyPhotoPreview,
+    setBabyPhotoPreview,
+    isAnalysisPending,
+    babyGrowthAnalysisResult,
+    renderFormattedText,
+}: any) => {
+
+    const handleBabyPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            postBirthForm.setValue('babyImage', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setBabyPhotoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    return (
+        !babyBirthDate ? (
+            <Card className="mt-4">
+                <CardHeader>
+                    <CardTitle>Welcome to Motherhood!</CardTitle>
+                    <CardDescription>To get started, please log your baby's current age once.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...initialBabyAgeForm}>
+                        <form onSubmit={initialBabyAgeForm.handleSubmit(handleInitialAgeSubmit)} className="flex items-end gap-4">
+                             <FormField
+                                control={initialBabyAgeForm.control}
+                                name="ageInMonths"
+                                render={({ field }) => (
+                                    <FormItem className="flex-grow">
+                                    <FormLabel>Baby's Current Age (in months)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g., 2" {...field} value={field.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit">Log Age</Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        ) : (
+            <div className="grid md:grid-cols-2 gap-8 mt-4">
+                <div className="space-y-8">
+                    <Card className="bg-pink-50/50">
+                        <CardHeader>
+                            <CardTitle>Your Recovery</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Label className="font-semibold">How was your delivery?</Label>
+                            <RadioGroup onValueChange={(v: DeliveryType) => setDeliveryType(v)} className="grid grid-cols-2 gap-4 mt-2">
+                                <Label
+                                htmlFor="normal"
+                                className={cn(
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                    deliveryType === 'normal' && "border-pink-500"
+                                )}
+                                >
+                                <RadioGroupItem value="normal" id="normal" className="sr-only" />
+                                <span>Normal Delivery</span>
+                                </Label>
+                                <Label
+                                htmlFor="c-section"
+                                className={cn(
+                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                                    deliveryType === 'c-section' && "border-pink-500"
+                                )}
+                                >
+                                <RadioGroupItem value="c-section" id="c-section" className="sr-only"/>
+                                <span>C-Section</span>
+                                </Label>
+                            </RadioGroup>
+                            <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
+                            {postDeliveryAdvice && (
+                                <Alert className="whitespace-pre-wrap">
+                                    <AlertTitle className="mb-2 font-bold">Personalized Recovery Plan</AlertTitle>
+                                    {renderFormattedText(postDeliveryAdvice)}
+                                </Alert>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
+                            <CardDescription>
+                                Log your baby's growth monthly to track their development.
+                                 <span className="block font-medium text-primary mt-1">Current Age: {babyAgeInMonths !== null ? formatBabyAge(babyAgeInMonths) : 'N/A'}</span>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Form {...postBirthForm}>
+                                <form onSubmit={postBirthForm.handleSubmit(onPostBirthSubmit)} className="grid sm:grid-cols-2 gap-4">
+                                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 3.5" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 50" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 34" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
+                                    <FormField
+                                        control={postBirthForm.control}
+                                        name="babyImage"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Upload Baby's Photo (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input type="file" accept="image/png, image/jpeg" onChange={handleBabyPhotoChange} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    {babyPhotoPreview && (
+                                        <div className="relative group sm:col-span-2">
+                                        <p className="text-sm font-medium mb-2">Baby Photo Preview:</p>
+                                        <img src={babyPhotoPreview} alt="Baby preview" className="rounded-lg w-full object-cover" />
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-2 right-2 h-6 w-6"
+                                            onClick={() => {
+                                                setBabyPhotoPreview(null);
+                                                postBirthForm.resetField('babyImage');
+                                            }}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                        </div>
+                                    )}
+
+                                    <Button type="submit" className="sm:col-span-2" disabled={isAnalysisPending}>
+                                        {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Log Growth & Analyze
+                                    </Button>
+                                </form>
+                                </Form>
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                <Card>
+                    <CardHeader>
+                        <AlertTitle>AI Baby Growth Analysis</AlertTitle>
+                        <CardDescription>
+                            Analysis of your baby's growth and development will appear here.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isAnalysisPending && babyGrowthAnalysisResult === null ? (
+                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                            ) : babyGrowthAnalysisResult ? (
+                                renderFormattedText(babyGrowthAnalysisResult.analysis)
+                            ) : (
+                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
+                                <p className="text-muted-foreground">Submit your baby's details to get an AI-powered growth report.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    );
 }
 
 
@@ -171,31 +519,6 @@ export function PregnancyBabyTracker() {
         }
     }
   }, [form, router, fetchPregnancyProgress, toast]);
-
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      form.setValue('ultrasoundImage', file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleBabyPhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      postBirthForm.setValue('babyImage', file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBabyPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
   
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -356,157 +679,6 @@ export function PregnancyBabyTracker() {
 
   if (!isClient) return null;
 
-  const renderPostDelivery = () => (
-    <div className="md:col-span-2 grid gap-8">
-        {!babyBirthDate ? (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Welcome to Motherhood!</CardTitle>
-                    <CardDescription>To get started, please log your baby's current age once.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...initialBabyAgeForm}>
-                        <form onSubmit={initialBabyAgeForm.handleSubmit(handleInitialAgeSubmit)} className="flex items-end gap-4">
-                             <FormField
-                                control={initialBabyAgeForm.control}
-                                name="ageInMonths"
-                                render={({ field }) => (
-                                    <FormItem className="flex-grow">
-                                    <FormLabel>Baby's Current Age (in months)</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" placeholder="e.g., 2" {...field} value={field.value ?? ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit">Log Age</Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        ) : (
-            <>
-                <Card className="bg-pink-50/50">
-                    <CardHeader>
-                        <CardTitle>Post-Delivery & Baby Growth</CardTitle>
-                        <CardDescription>Congratulations! Track your recovery and your baby's development.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                        <div className="space-y-4">
-                            <h3 className="font-semibold text-lg">Your Recovery</h3>
-                            <Label className="font-semibold">How was your delivery?</Label>
-                            <RadioGroup onValueChange={(v: DeliveryType) => setDeliveryType(v)} className="grid grid-cols-2 gap-4 mt-2">
-                                <Label
-                                htmlFor="normal"
-                                className={cn(
-                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                                    deliveryType === 'normal' && "border-pink-500"
-                                )}
-                                >
-                                <RadioGroupItem value="normal" id="normal" className="sr-only" />
-                                <span>Normal Delivery</span>
-                                </Label>
-                                <Label
-                                htmlFor="c-section"
-                                className={cn(
-                                    "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                                    deliveryType === 'c-section' && "border-pink-500"
-                                )}
-                                >
-                                <RadioGroupItem value="c-section" id="c-section" className="sr-only"/>
-                                <span>C-Section</span>
-                                </Label>
-                            </RadioGroup>
-                            <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
-                            {postDeliveryAdvice && (
-                                <Alert className="whitespace-pre-wrap">
-                                    <AlertTitle className="mb-2 font-bold">Personalized Recovery Plan</AlertTitle>
-                                    {renderFormattedText(postDeliveryAdvice)}
-                                </Alert>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
-                        <CardDescription>
-                            Log your baby's growth monthly to track their development.
-                             <span className="block font-medium text-primary mt-1">Current Age: {babyAgeInMonths !== null ? formatBabyAge(babyAgeInMonths) : 'N/A'}</span>
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Form {...postBirthForm}>
-                            <form onSubmit={postBirthForm.handleSubmit(onPostBirthSubmit)} className="grid sm:grid-cols-2 gap-4">
-                                    <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 3.5" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                                    <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 50" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                                    <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g. 34" {...field} value={field.value ?? ''} /></FormControl></FormItem>)} />
-                                <FormField
-                                    control={postBirthForm.control}
-                                    name="babyImage"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Upload Baby's Photo (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input type="file" accept="image/png, image/jpeg" onChange={handleBabyPhotoChange} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                {babyPhotoPreview && (
-                                    <div className="relative group sm:col-span-2">
-                                    <p className="text-sm font-medium mb-2">Baby Photo Preview:</p>
-                                    <img src={babyPhotoPreview} alt="Baby preview" className="rounded-lg w-full object-cover" />
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute top-2 right-2 h-6 w-6"
-                                        onClick={() => {
-                                            setBabyPhotoPreview(null);
-                                            postBirthForm.resetField('babyImage');
-                                        }}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                    </div>
-                                )}
-
-                                <Button type="submit" className="sm:col-span-2" disabled={isAnalysisPending}>
-                                    {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Log Growth & Analyze
-                                </Button>
-                            </form>
-                            </Form>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <AlertTitle>AI Baby Growth Analysis</AlertTitle>
-                        <CardDescription>
-                            Analysis of your baby's growth and development will appear here.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isAnalysisPending && babyGrowthAnalysisResult === null ? (
-                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
-                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                            </div>
-                            ) : babyGrowthAnalysisResult ? (
-                                renderFormattedText(babyGrowthAnalysisResult.analysis)
-                            ) : (
-                            <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
-                                <p className="text-muted-foreground">Submit your baby's details to get an AI-powered growth report.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </>
-        )}
-    </div>
-  );
 
   return (
     <div className="container mx-auto py-8">
@@ -521,137 +693,58 @@ export function PregnancyBabyTracker() {
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="grid md:grid-cols-2 gap-8">
-            {pregnancyWeeks && pregnancyWeeks >= 49 ? renderPostDelivery() :
-            (
-                <>
-                <div className="space-y-4">
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onUltrasoundSubmit)}>
-                    <FormField
-                    control={form.control}
-                    name="pregnancyWeeks"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Pregnancy Duration (in weeks)</FormLabel>
-                        <FormControl>
-                            <div className="flex gap-2">
-                                <Input type="number" placeholder="e.g., 20" {...field} value={field.value || ''} />
-                                <Button type="button" onClick={handleConfirmWeek} disabled={isProgressPending}>
-                                    {isProgressPending ? <Loader2 className="h-4 w-4 animate-spin"/> : "Confirm"}
-                                </Button>
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    
-                    <div className="p-4 rounded-lg bg-secondary/50 space-y-4 min-h-[200px] mt-4">
-                        <div>
-                            <h4 className="font-semibold flex items-center gap-2 text-lg"><Dna /> Week {form.watch('pregnancyWeeks') || 'X'}: Fetal Development</h4>
-                            {isProgressPending && <Loader2 className="h-5 w-5 animate-spin mt-2" />}
-                            {progressResult && <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.fetalDevelopment}</p>}
-                            {!isProgressPending && !progressResult && <p className="text-sm text-muted-foreground">Confirm a week to see development details.</p>}
-                        </div>
-                        {progressResult?.motherSymptoms && (
-                             <div>
-                                <h4 className="font-semibold flex items-center gap-2 text-lg"><HeartPulse /> Your Body This Week</h4>
-                                <p className="text-muted-foreground whitespace-pre-wrap text-sm">{progressResult.motherSymptoms}</p>
-                             </div>
-                        )}
-                    </div>
-
-                    <FormField
-                        control={form.control}
-                        name="ultrasoundImage"
-                        render={() => (
-                        <FormItem className="mt-4">
-                            <FormLabel>Ultrasound Image (Optional)</FormLabel>
-                            <FormControl>
-                            <div className="relative border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
-                                <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <p className="mt-2 text-sm text-muted-foreground">
-                                Drag & drop or click to upload for AI analysis
-                                </p>
-                                <Input 
-                                    type="file" 
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    accept="image/png, image/jpeg"
-                                    onChange={handleFileChange} 
-                                />
-                            </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    {preview && (
-                        <div className="relative group mt-4">
-                        <p className="text-sm font-medium mb-2">Image Preview:</p>
-                        <img src={preview} alt="Ultrasound preview" className="rounded-lg w-full object-cover" />
-                        <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => {
-                            setPreview(null);
-                            form.resetField('ultrasoundImage');
-                            }}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                        </div>
-                    )}
-                    <FormField
-                    control={form.control}
-                    name="additionalNotes"
-                    render={({ field }) => (
-                        <FormItem className="mt-4">
-                        <FormLabel>Additional Notes for Ultrasound Analysis (optional)</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="Any specific concerns or notes from your doctor..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <Button type="submit" disabled={isAnalysisPending || !preview} className="w-full mt-4">
-                        {isAnalysisPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Analyze Ultrasound
-                    </Button>
-                </form>
-                </Form>
-                </div>
-
-                <div className="space-y-4 pt-8 md:pt-0">
-                    {isAnalysisPending && analysisResult === null ? (
-                    <div className="flex items-center justify-center h-full rounded-lg bg-secondary">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                    ) : analysisResult ? (
-                    <div className="space-y-4 pt-4">
-                        <h3 className="text-xl font-semibold flex items-center gap-2"><BrainCircuit /> Ultrasound Analysis</h3>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><Baby /> Baby Size Estimate</h4>
-                            <p className="text-muted-foreground">{analysisResult.babySizeEstimate}</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><HeartPulse /> Health Assessment</h4>
-                            <p className="text-muted-foreground">{analysisResult.healthAssessment}</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-secondary">
-                            <h4 className="font-semibold flex items-center gap-2"><ListChecks /> Recommendations</h4>
-                            <p className="text-muted-foreground">{analysisResult.recommendations}</p>
-                        </div>
-                    </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full rounded-lg bg-secondary text-center p-8">
-                            <p className="text-muted-foreground">Upload an ultrasound image and click "Analyze Ultrasound" to see the AI-powered report here.</p>
-                        </div>
-                    )}
-                </div>
-                </>
+        <CardContent>
+            {pregnancyWeeks === null || pregnancyWeeks < 49 ? (
+                 <PregnancyView 
+                    form={form}
+                    handleConfirmWeek={handleConfirmWeek}
+                    isProgressPending={isProgressPending}
+                    progressResult={progressResult}
+                    onUltrasoundSubmit={onUltrasoundSubmit}
+                    isAnalysisPending={isAnalysisPending}
+                    analysisResult={analysisResult}
+                    preview={preview}
+                    setPreview={setPreview}
+                />
+            ) : (
+                <Tabs defaultValue="baby" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="baby">Baby Growth</TabsTrigger>
+                        <TabsTrigger value="pregnancy">My Pregnancy Journey</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="baby">
+                         <PostDeliveryView
+                            babyBirthDate={babyBirthDate}
+                            babyAgeInMonths={babyAgeInMonths}
+                            handleInitialAgeSubmit={handleInitialAgeSubmit}
+                            initialBabyAgeForm={initialBabyAgeForm}
+                            postBirthForm={postBirthForm}
+                            onPostBirthSubmit={onPostBirthSubmit}
+                            deliveryType={deliveryType}
+                            setDeliveryType={setDeliveryType}
+                            handleDeliveryTypeSubmit={handleDeliveryTypeSubmit}
+                            postDeliveryAdvice={postDeliveryAdvice}
+                            babyPhotoPreview={babyPhotoPreview}
+                            setBabyPhotoPreview={setBabyPhotoPreview}
+                            isAnalysisPending={isAnalysisPending}
+                            babyGrowthAnalysisResult={babyGrowthAnalysisResult}
+                            renderFormattedText={renderFormattedText}
+                         />
+                    </TabsContent>
+                    <TabsContent value="pregnancy">
+                        <PregnancyView 
+                            form={form}
+                            handleConfirmWeek={handleConfirmWeek}
+                            isProgressPending={isProgressPending}
+                            progressResult={progressResult}
+                            onUltrasoundSubmit={onUltrasoundSubmit}
+                            isAnalysisPending={isAnalysisPending}
+                            analysisResult={analysisResult}
+                            preview={preview}
+                            setPreview={setPreview}
+                        />
+                    </TabsContent>
+                </Tabs>
             )}
         </CardContent>
       </Card>
