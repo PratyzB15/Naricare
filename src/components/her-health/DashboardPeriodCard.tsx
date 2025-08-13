@@ -6,7 +6,7 @@ import { differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, MessageCircleQuestion } from 'lucide-react';
+import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, MessageCircleQuestion, PartyPopper } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -83,7 +83,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
                 try {
                     const [progress, nutrition] = await Promise.all([
                         getPregnancyProgressAction({ pregnancyWeeks: weeks }),
-                        getHormonalNutritionAction({ pregnancyWeek: weeks })
+                        getHormonalNutritionAction({ pregnancyTrimester: Math.floor(weeks / 13) + 1 })
                     ]);
                     setPregnancyInfo({ 
                         week: weeks, 
@@ -145,19 +145,19 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
          <Card className="shadow-md h-full flex flex-col bg-pink-50/50">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-pink-600">
-                    <MessageCircleQuestion />
-                    Post-Delivery Journey
+                    <PartyPopper />
+                    Congratulations, New Mother!
                 </CardTitle>
-                 <CardDescription>Your pregnancy journey is complete. It's time to focus on your recovery.</CardDescription>
+                 <CardDescription>You've brought a new life to earth. It's time to focus on your recovery and your baby's growth.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                <p>Please go to the Pregnancy Tracker to tell us about your delivery and get personalized advice for your recovery.</p>
+                <p>Please go to the Pregnancy &amp; Baby Tracker to log your baby's details and get personalized advice for your recovery.</p>
             </CardContent>
             {userType === 'self' && (
                 <CardContent>
                     <Button asChild className="w-full bg-pink-500 hover:bg-pink-600 text-white">
                         <Link href="/pregnancy-baby-tracker">
-                           Go to Recovery Tracker <ArrowRight className="ml-2" />
+                           Go to Post-Delivery Tracker <ArrowRight className="ml-2" />
                         </Link>
                     </Button>
                 </CardContent>

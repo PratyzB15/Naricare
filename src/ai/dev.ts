@@ -10,3 +10,4 @@ import '@/ai/flows/breast-cancer-analysis.ts';
 import '@/ai/flows/labor-disease-detection.ts';
 import '@/ai/flows/baby-nutrition-recipe.ts';
 import '@/ai/flows/baby-growth-analysis.ts';
+import '@/ai/flows/pregnancy-symptom-checker.ts';

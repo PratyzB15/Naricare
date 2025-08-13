@@ -9,6 +9,7 @@ import { breastCancerAnalysis, type BreastCancerAnalysisInput } from '@/ai/flows
 import { detectLaborDisease, type DetectLaborDiseaseInput } from '@/ai/flows/labor-disease-detection';
 import { getBabyNutrition, type BabyNutritionInput } from '@/ai/flows/baby-nutrition-recipe';
 import { babyGrowthAnalysis, type BabyGrowthAnalysisInput } from '@/ai/flows/baby-growth-analysis';
+import { pregnancySymptomChecker, type PregnancySymptomCheckerInput } from '@/ai/flows/pregnancy-symptom-checker';
 
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
@@ -99,5 +100,15 @@ export async function babyGrowthAnalysisAction(input: BabyGrowthAnalysisInput) {
     } catch (e) {
         console.error(e);
         throw new Error('Failed to get baby growth analysis from AI.');
+    }
+}
+
+export async function pregnancySymptomCheckerAction(input: PregnancySymptomCheckerInput) {
+    try {
+        const result = await pregnancySymptomChecker(input);
+        return result;
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to get symptom analysis from AI.');
     }
 }
