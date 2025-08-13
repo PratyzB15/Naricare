@@ -220,7 +220,8 @@ export function PregnancyBabyTracker() {
   if (!isClient) return null;
 
   const renderPostDelivery = () => (
-    <Card className="md:col-span-2 bg-pink-50/50">
+    <div className="md:col-span-2 grid gap-8">
+    <Card className="bg-pink-50/50">
         <CardHeader>
             <CardTitle>Post-Delivery & Baby Growth</CardTitle>
             <CardDescription>Congratulations! Track your recovery and your baby's development.</CardDescription>
@@ -259,41 +260,56 @@ export function PregnancyBabyTracker() {
                     </Alert>
                 )}
             </div>
+            </CardContent>
+    </Card>
 
-            <div className="space-y-4 pt-6 border-t">
-                 <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
-                 <p className="text-sm text-muted-foreground">Log your baby's growth monthly to track their development.</p>
-                 <Form {...postBirthForm}>
-                    <form onSubmit={() => {}} className="grid sm:grid-cols-2 gap-4">
-                         <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                         <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                         <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField
-                            control={postBirthForm.control}
-                            name="babyImage"
-                            render={() => (
-                            <FormItem>
-                                <FormLabel>Upload Baby's Photo</FormLabel>
-                                <FormControl>
-                                    <Input type="file" accept="image/png, image/jpeg" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <Button type="submit" className="sm:col-span-2">Log Growth & Analyze</Button>
-                    </form>
-                 </Form>
-                 <Alert>
-                    <Activity className="h-4 w-4" />
-                    <AlertTitle>AI Analysis</AlertTitle>
-                    <CardDescription>
-                        Analysis of your baby's growth and development will appear here after you log their details.
-                    </CardDescription>
-                 </Alert>
-            </div>
+    <Card>
+        <CardHeader>
+             <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
+            <CardDescription>Log your baby's growth monthly to track their development.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Form {...postBirthForm}>
+                <form onSubmit={() => {}} className="grid sm:grid-cols-2 gap-4">
+                        <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                    <FormField
+                        control={postBirthForm.control}
+                        name="babyImage"
+                        render={() => (
+                        <FormItem>
+                            <FormLabel>Upload Baby's Photo</FormLabel>
+                            <FormControl>
+                                <Input type="file" accept="image/png, image/jpeg" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <Button type="submit" className="sm:col-span-2">Log Growth & Analyze</Button>
+                </form>
+                </Form>
         </CardContent>
     </Card>
+    <Card>
+        <CardHeader>
+            <AlertTitle>AI Analysis</AlertTitle>
+            <CardDescription>
+                Analysis of your baby's growth and development will appear here after you log their details.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Alert>
+                <Activity className="h-4 w-4" />
+                <AlertTitle>AI Analysis</AlertTitle>
+                <CardDescription>
+                    Analysis of your baby's growth and development will appear here after you log their details.
+                </CardDescription>
+            </Alert>
+        </CardContent>
+    </Card>
+    </div>
   );
 
   return (

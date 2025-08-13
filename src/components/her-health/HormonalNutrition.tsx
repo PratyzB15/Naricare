@@ -327,7 +327,8 @@ export function HormonalNutrition() {
           {babyResult && renderBabyRecommendations(babyResult)}
 
           {!isPending && !result && !babyResult && (
-              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <Utensils className="h-16 w-16 mb-4 text-gray-300"/>
                 <p>Your personalized recommendations will appear here after you submit the form.</p>
               </div>
           )}
