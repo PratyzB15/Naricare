@@ -7,6 +7,7 @@ import { babyHealthTracker, type BabyHealthTrackerInput } from '@/ai/flows/baby-
 import { getPregnancyProgress, type PregnancyProgressInput } from '@/ai/flows/pregnancy-progress';
 import { breastCancerAnalysis, type BreastCancerAnalysisInput } from '@/ai/flows/breast-cancer-analysis';
 import { detectLaborDisease, type DetectLaborDiseaseInput } from '@/ai/flows/labor-disease-detection';
+import { getBabyNutrition, type BabyNutritionInput } from '@/ai/flows/baby-nutrition-recipe';
 
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
@@ -77,5 +78,15 @@ export async function detectLaborDiseaseAction(input: DetectLaborDiseaseInput) {
     } catch (e) {
         console.error(e);
         throw new Error('Failed to get disease detection from AI.');
+    }
+}
+
+export async function getBabyNutritionAction(input: BabyNutritionInput) {
+    try {
+        const result = await getBabyNutrition(input);
+        return result;
+    } catch (e) {
+        console.error(e);
+        throw new Error('Failed to get baby nutrition advice from AI.');
     }
 }

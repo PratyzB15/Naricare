@@ -8,3 +8,4 @@ import '@/ai/flows/period-predictions.ts';
 import '@/ai/flows/pregnancy-progress.ts';
 import '@/ai/flows/breast-cancer-analysis.ts';
 import '@/ai/flows/labor-disease-detection.ts';
+import '@/ai/flows/baby-nutrition-recipe.ts';

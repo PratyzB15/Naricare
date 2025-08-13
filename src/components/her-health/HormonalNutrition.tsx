@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { BrainCircuit, Loader2, Leaf, Utensils, HeartPulse, Moon, Sun, Droplet } from 'lucide-react';
+import { BrainCircuit, Loader2, Leaf, Utensils, HeartPulse, Moon, Sun, Droplet, Baby } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -13,9 +13,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { getHormonalNutritionAction } from '@/app/actions';
+import { getHormonalNutritionAction, getBabyNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { HormonalCycleNutritionOutput } from '@/ai/flows/hormonal-cycle-nutrition';
+import type { BabyNutritionOutput } from '@/ai/flows/baby-nutrition-recipe';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MedicationReminderCard, type Medication } from './MedicationReminderCard';
 
@@ -34,9 +35,14 @@ const pregnancyFormSchema = z.object({
   medicalHistory: z.string().optional(),
 });
 
+const babyFormSchema = z.object({
+    babyAgeInMonths: z.coerce.number().min(0, "Age cannot be negative.").max(36, "This tracker supports up to 36 months."),
+});
+
 export function HormonalNutrition() {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<HormonalCycleNutritionOutput | null>(null);
+  const [babyResult, setBabyResult] = useState<BabyNutritionOutput | null>(null);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -89,17 +95,29 @@ export function HormonalNutrition() {
     resolver: zodResolver(pregnancyFormSchema),
     defaultValues: { pregnancyTrimester: 1, dietaryPreferences: '', medicalHistory: '' },
   });
+  
+  const babyForm = useForm<z.infer<typeof babyFormSchema>>({
+      resolver: zodResolver(babyFormSchema),
+      defaultValues: { babyAgeInMonths: undefined },
+  });
 
-  const handleFormSubmit = (values: any, type: 'cycle' | 'pregnancy') => {
+  const handleFormSubmit = (values: any, type: 'cycle' | 'pregnancy' | 'baby') => {
     setResult(null);
+    setBabyResult(null);
+
     startTransition(async () => {
       try {
-        const input = type === 'pregnancy' ? { pregnancyTrimester: values.pregnancyTrimester, dietaryPreferences: values.dietaryPreferences, medicalHistory: values.medicalHistory } : values;
-        const res = await getHormonalNutritionAction(input);
-        setResult(res);
+        if (type === 'baby') {
+            const res = await getBabyNutritionAction(values);
+            setBabyResult(res);
+        } else {
+            const input = type === 'pregnancy' ? { pregnancyTrimester: values.pregnancyTrimester, dietaryPreferences: values.dietaryPreferences, medicalHistory: values.medicalHistory } : values;
+            const res = await getHormonalNutritionAction(input);
+            setResult(res);
+        }
         toast({
           title: 'Recommendations Ready!',
-          description: 'AI has generated your personalized nutrition advice.',
+          description: 'AI has generated your personalized advice.',
         });
       } catch (error) {
         console.error('Failed to get recommendations:', error);
@@ -130,6 +148,41 @@ export function HormonalNutrition() {
         </div>
     );
   };
+  
+   const renderBabyRecommendations = (data: BabyNutritionOutput) => {
+    const { essentialNutrients, dietSuggestions, simpleRecipe } = data;
+    return (
+        <div className="space-y-6 text-sm">
+            <div>
+                <h4 className="font-bold text-md text-foreground">Essential Nutrients</h4>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 mt-1">
+                    {essentialNutrients.split('- ').filter(i => i.trim()).map((item, i) => <li key={i}>{item.trim()}</li>)}
+                </ul>
+            </div>
+             <div>
+                <h4 className="font-bold text-md text-foreground">Diet Suggestions</h4>
+                <ul className="list-disc list-inside text-muted-foreground space-y-1 mt-1">
+                    {dietSuggestions.split('- ').filter(i => i.trim()).map((item, i) => <li key={i}>{item.trim()}</li>)}
+                </ul>
+            </div>
+             <div>
+                <h4 className="font-bold text-md text-foreground">Simple Recipe: {simpleRecipe.name}</h4>
+                <div className="mt-1">
+                    <p className="font-semibold">Ingredients:</p>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                         {simpleRecipe.ingredients.split('- ').filter(i => i.trim()).map((item, i) => <li key={i}>{item.trim()}</li>)}
+                    </ul>
+                </div>
+                 <div className="mt-2">
+                    <p className="font-semibold">Instructions:</p>
+                    <ol className="list-decimal list-inside text-muted-foreground space-y-1">
+                         {simpleRecipe.instructions.split(/\d+\.\s/).filter(i => i.trim()).map((item, i) => <li key={i}>{item.trim()}</li>)}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    );
+  };
 
 
   if (!isClient) return null;
@@ -144,14 +197,15 @@ export function HormonalNutrition() {
               Nutrition Advisor
             </CardTitle>
             <CardDescription>
-              Get personalized diet & lifestyle advice based on your body's needs.
+              Get personalized diet & lifestyle advice for yourself or your baby.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="cycle" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="cycle">Menstrual Cycle</TabsTrigger>
                 <TabsTrigger value="pregnancy">Pregnancy</TabsTrigger>
+                <TabsTrigger value="baby">Baby Nutrition</TabsTrigger>
               </TabsList>
               <TabsContent value="cycle" className="pt-4">
                 <Form {...cycleForm}>
@@ -224,6 +278,27 @@ export function HormonalNutrition() {
                   </form>
                 </Form>
               </TabsContent>
+               <TabsContent value="baby" className="pt-4">
+                <Form {...babyForm}>
+                  <form onSubmit={babyForm.handleSubmit((values) => handleFormSubmit(values, 'baby'))} className="space-y-4">
+                    <FormField
+                      control={babyForm.control}
+                      name="babyAgeInMonths"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Baby's Age (in months)</FormLabel>
+                          <FormControl><Input type="number" placeholder="e.g., 8" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={isPending} className="w-full">
+                      {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Baby className="mr-2 h-4 w-4" />}
+                      Get Baby Nutrition Advice
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
@@ -248,14 +323,13 @@ export function HormonalNutrition() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
-          {result ? (
-            renderRecommendations(result.recommendations)
-          ) : (
-            !isPending && (
+          {result && renderRecommendations(result.recommendations)}
+          {babyResult && renderBabyRecommendations(babyResult)}
+
+          {!isPending && !result && !babyResult && (
               <div className="flex items-center justify-center h-full text-center text-muted-foreground">
                 <p>Your personalized recommendations will appear here after you submit the form.</p>
               </div>
-            )
           )}
         </CardContent>
       </Card>

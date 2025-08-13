@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Baby, Loader2, UploadCloud, X, BrainCircuit, HeartPulse, ListChecks, Dna } from 'lucide-react';
+import { Baby, Loader2, UploadCloud, X, BrainCircuit, HeartPulse, ListChecks, Dna, Activity } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,13 @@ const formSchema = z.object({
   ),
 });
 
+const postBirthFormSchema = z.object({
+    weight: z.coerce.number().optional(),
+    height: z.coerce.number().optional(),
+    headCircumference: z.coerce.number().optional(),
+    babyImage: z.custom<File>().optional(),
+});
+
 type DeliveryType = "normal" | "c-section";
 
 export function PregnancyBabyTracker() {
@@ -60,6 +67,11 @@ export function PregnancyBabyTracker() {
       additionalNotes: '',
       ultrasoundImage: undefined,
     },
+  });
+
+  const postBirthForm = useForm<z.infer<typeof postBirthFormSchema>>({
+      resolver: zodResolver(postBirthFormSchema),
+      defaultValues: {},
   });
   
   const [isClient, setIsClient] = useState(false);
@@ -210,11 +222,12 @@ export function PregnancyBabyTracker() {
   const renderPostDelivery = () => (
     <Card className="md:col-span-2 bg-pink-50/50">
         <CardHeader>
-            <CardTitle>Post-Delivery Recovery</CardTitle>
-            <CardDescription>Congratulations on your new arrival! Let's focus on your recovery.</CardDescription>
+            <CardTitle>Post-Delivery & Baby Growth</CardTitle>
+            <CardDescription>Congratulations! Track your recovery and your baby's development.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-             <div>
+        <CardContent className="space-y-8">
+             <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Your Recovery</h3>
                 <Label className="font-semibold">How was your delivery?</Label>
                  <RadioGroup onValueChange={(v: DeliveryType) => setDeliveryType(v)} className="grid grid-cols-2 gap-4 mt-2">
                     <Label 
@@ -238,14 +251,47 @@ export function PregnancyBabyTracker() {
                     <span>C-Section</span>
                     </Label>
                 </RadioGroup>
+                <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
+                {postDeliveryAdvice && (
+                    <Alert className="whitespace-pre-wrap">
+                        <AlertTitle>Personalized Recovery Plan</AlertTitle>
+                        <CardDescription>{postDeliveryAdvice}</CardDescription>
+                    </Alert>
+                )}
             </div>
-            <Button onClick={handleDeliveryTypeSubmit} disabled={!deliveryType}>Get Recovery Advice</Button>
-            {postDeliveryAdvice && (
-                <Alert className="whitespace-pre-wrap">
-                    <AlertTitle>Personalized Recovery Plan</AlertTitle>
-                    <CardDescription>{postDeliveryAdvice}</CardDescription>
-                </Alert>
-            )}
+
+            <div className="space-y-4 pt-6 border-t">
+                 <h3 className="font-semibold text-lg">Baby's Monthly Check-in</h3>
+                 <p className="text-sm text-muted-foreground">Log your baby's growth monthly to track their development.</p>
+                 <Form {...postBirthForm}>
+                    <form onSubmit={() => {}} className="grid sm:grid-cols-2 gap-4">
+                         <FormField control={postBirthForm.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                         <FormField control={postBirthForm.control} name="height" render={({ field }) => (<FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                         <FormField control={postBirthForm.control} name="headCircumference" render={({ field }) => (<FormItem><FormLabel>Head Circumference (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField
+                            control={postBirthForm.control}
+                            name="babyImage"
+                            render={() => (
+                            <FormItem>
+                                <FormLabel>Upload Baby's Photo</FormLabel>
+                                <FormControl>
+                                    <Input type="file" accept="image/png, image/jpeg" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <Button type="submit" className="sm:col-span-2">Log Growth & Analyze</Button>
+                    </form>
+                 </Form>
+                 <Alert>
+                    <Activity className="h-4 w-4" />
+                    <AlertTitle>AI Analysis</AlertTitle>
+                    <CardDescription>
+                        Analysis of your baby's growth and development will appear here after you log their details.
+                    </CardDescription>
+                 </Alert>
+            </div>
         </CardContent>
     </Card>
   );
@@ -256,7 +302,7 @@ export function PregnancyBabyTracker() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">
             <Baby />
-            Pregnancy & Baby Health Tracker
+            Pregnancy & Baby Tracker
           </CardTitle>
           <CardDescription>
             Get AI-powered insights on your baby's health, growth, and development.
