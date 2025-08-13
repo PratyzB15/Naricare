@@ -181,7 +181,7 @@ export function OccupationalHealth() {
 
   return (
     <div>
-        <Button variant="link" onClick={() => setSector(null)} className="mb-4">
+        <Button variant="link" onClick={() => { setSector(null); setResult(null); }} className="mb-4">
             &larr; Back to sector selection
         </Button>
         <div className="grid md:grid-cols-2 gap-8 mt-4">
