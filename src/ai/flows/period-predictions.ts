@@ -56,19 +56,22 @@ const prompt = ai.definePrompt({
 
 **Your Tasks:**
 
-1.  **Predict Next Period:** Based on the data, predict the \`predictedStartDate\` of the next menstrual cycle. Provide a \`confidence\` score (0-1) and \`reasoning\` for your prediction. A typical cycle is 28-32 days, but consider the user's history.
+1.  **Predict Next Period:**
+    *   First, calculate the average cycle length from the provided pastCycleData. A cycle is the time from the start of one period to the start of the next.
+    *   Based on this average, predict the predictedStartDate of the next menstrual cycle by adding the average cycle length to the start date of the most recent period. A typical cycle is 28-32 days, but you must use the user's historical average.
+    *   Provide a confidence score (0-1). Confidence should be higher for users with very regular cycles.
+    *   Provide your reasoning, explaining the average cycle length you calculated and how you used it for the prediction.
 
-2.  **Analyze Menstrual Health:** Provide a \`healthAnalysis\`. This is crucial.
-    *   **Cycle Regularity:** Analyze the cycle lengths. A normal cycle is 21-35 days. If cycles are consistently shorter or longer, or vary wildly, it's irregular.
-    *   **PCOS/PCOD Detection:** If you see a history of irregular or missed periods for 3+ months, especially combined with a medical history of PCOS, flag this. Mention symptoms like irregular periods. Suggest seeing a doctor. You can mention medications like Metformin (for insulin resistance), combined oral contraceptives (to regulate periods), Spironolactone (reduces androgens), and Clomiphene (for fertility) as things a doctor might discuss.
-    *   **Menopause Detection:** If the user is over 55 and has missed periods for several months, it is likely menopause. Mention this in your analysis.
-    *   **Late/On-Time:** Compare the last logged period's start date with the previous prediction (if available in a real app context, for now, just analyze the general trend). Note if periods are generally late or on time.
-    *   **Personalization:** Use the \`age\` and \`medicalHistory\` (e.g., Thyroid issues) to make your analysis more accurate and personalized. Thyroid issues can cause irregular periods.
+2.  **Analyze Menstrual Health:** Provide a healthAnalysis. This is crucial.
+    *   **Cycle Regularity:** Analyze the cycle lengths. A normal cycle is 21-35 days. If cycles are consistently shorter or longer, or vary wildly, it's irregular. Mention this.
+    *   **PCOS/PCOD Detection:** If you see a history of very irregular or missed periods (e.g., cycles longer than 35-40 days, or large variations), especially if combined with a medical history of PCOS, flag this. Mention symptoms like irregular periods. Suggest seeing a doctor.
+    *   **Menopause Detection:** If the user is over 45-50 and has highly irregular or missed periods, consider mentioning that perimenopause or menopause can cause such changes.
+    *   **Personalization:** Use the age and medicalHistory (e.g., Thyroid issues) to make your analysis more accurate. Thyroid issues can cause irregular periods.
 
-3. **Predict Flow Intensity:** Provide a day-by-day \`flowPrediction\` for the next cycle. A standard pattern is: Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light.
+3.  **Predict Flow Intensity:** Provide a day-by-day flowPrediction for the next cycle. A standard pattern is: Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light.
 
 **Output Format:**
-Provide your response in a clear JSON format. If there are no health concerns, the \`healthAnalysis\` can be a simple statement like "Your cycles appear to be regular and healthy."
+Provide your response in a clear JSON format. If there are no health concerns, the healthAnalysis can be a simple statement like "Your cycles appear to be regular and healthy."
 `,
 });
 

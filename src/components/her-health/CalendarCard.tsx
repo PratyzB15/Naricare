@@ -39,24 +39,35 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
 
   if (prediction?.predictedStartDate) {
     const start = parseISO(prediction.predictedStartDate);
-    for (let i = 0; i < 5; i++) { // Assume 5 days for predicted period
+    const flowString = prediction.flowPrediction || '';
+
+    // A more robust way to parse the flow string
+    const flowMap: { [key: string]: 'light' | 'medium' | 'heavy' } = {};
+    flowString.split(',').forEach(part => {
+        const match = part.trim().match(/Day (\d+): (Light|Medium|Heavy)/i);
+        if (match) {
+            const dayNum = parseInt(match[1], 10);
+            const intensity = match[2].toLowerCase() as 'light' | 'medium' | 'heavy';
+            flowMap[dayNum] = intensity;
+        }
+    });
+
+    // Default to 5 days if parsing fails but a date exists
+    const predictedPeriodLength = Object.keys(flowMap).length > 0 ? Object.keys(flowMap).length : 5;
+
+    for (let i = 0; i < predictedPeriodLength; i++) {
       const currentDay = addDays(start, i);
       predictedDays.push(currentDay);
+      
+      const dayNum = i + 1;
+      const intensity = flowMap[dayNum];
 
-      if (prediction.flowPrediction) {
-          const flowForDay = prediction.flowPrediction.toLowerCase();
-          
-          if (i === 0 && flowForDay.includes("day 1: medium")) {
-              flowDays.medium.push(currentDay);
-          } else if (i === 1 && flowForDay.includes("day 2: heavy")) {
-              flowDays.heavy.push(currentDay);
-          } else if (i === 2 && flowForDay.includes("day 3: heavy")) {
-              flowDays.heavy.push(currentDay);
-          } else if (i === 3 && flowForDay.includes("day 4: medium")) {
-              flowDays.medium.push(currentDay);
-          } else if (i === 4 && flowForDay.includes("day 5: light")) {
-              flowDays.light.push(currentDay);
-          }
+      if (intensity === 'light') {
+          flowDays.light.push(currentDay);
+      } else if (intensity === 'medium') {
+          flowDays.medium.push(currentDay);
+      } else if (intensity === 'heavy') {
+          flowDays.heavy.push(currentDay);
       }
     }
   }
@@ -84,12 +95,12 @@ export function CalendarCard({ cycles, prediction, onLogPeriod }: CalendarCardPr
             flowLight: flowDays.light,
           }}
           modifiersClassNames={{
-            period: 'bg-destructive/80 text-destructive-foreground',
-            predicted: 'bg-pink-200/50 text-pink-800',
-            flowHeavy: 'bg-red-700 text-white',
-            flowMedium: 'bg-red-500 text-white',
-            flowLight: 'bg-red-300 text-white',
-            today: 'border-2 border-accent rounded-full'
+            period: 'bg-destructive/80 text-destructive-foreground rounded-none',
+            predicted: 'bg-pink-200/50 text-pink-800 rounded-none',
+            flowHeavy: 'bg-red-700 text-white rounded-none',
+            flowMedium: 'bg-red-500 text-white rounded-none',
+            flowLight: 'bg-red-300 text-white rounded-none',
+            today: 'border-2 border-primary rounded-full'
           }}
           className="p-0"
         />
