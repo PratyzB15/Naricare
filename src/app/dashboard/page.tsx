@@ -17,6 +17,7 @@ import {
   Globe,
   MapPin,
   HardHat,
+  Quote,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -168,6 +169,39 @@ const translations = {
   },
 };
 
+const quotes = [
+  "Every two minutes, a woman dies from preventable causes related to pregnancy or childbirth—95% of these deaths occur in low-resource countries.",
+  "If all women in developing countries who wanted to avoid pregnancy used modern contraception, maternal deaths would drop by nearly 70%.",
+  "Women make up 70% of the global health workforce, yet hold only 25% of senior leadership roles.",
+  "Cervical cancer is nearly 100% preventable, yet it kills over 340,000 women each year—90% in low- and middle-income countries.",
+  "One in three women worldwide experiences physical or sexual violence—often with lasting impacts on their health and well-being.",
+  "Women produce 60–80% of the food in developing countries, yet own less than 15% of the land they farm.",
+  "If women farmers had the same access to resources as men, global food production could increase by up to 4%, reducing world hunger by 17%.",
+  "Only 1 in 5 agricultural researchers globally is a woman—and even fewer lead innovation in agritech.",
+  "Women are 30% less likely than men to own a mobile phone in low- and middle-income countries—limiting their access to digital farming tools and health info.",
+  "When women farmers grow more diverse, nutrient-rich crops using climate-smart tools, child malnutrition drops by up to 33% in their communities.",
+  "Rural populations are 3 times more likely to face shortages in healthcare workers than urban areas.",
+  "80% of the world’s mental health conditions go untreated, especially in low- and middle-income countries.",
+  "In low-income countries, there is an average of only 0.2 doctors per 1,000 people—compared to 3.5 per 1,000 in high-income nations.",
+  "Over 300,000 women die each year from complications of pregnancy and childbirth—most could be prevented with access to skilled care.",
+  "1 in 5 women of reproductive age has an unmet need for modern contraception—denying them control over their bodies and futures.",
+  "Adolescent girls account for 1 in 5 new HIV infections among adults in sub-Saharan Africa—driven by gender inequality, stigma, and lack of education.",
+  "1 in 4 women globally lives without a decent toilet—endangering their health, safety, and dignity.",
+  "500 million women and girls lack adequate facilities to manage their period safely and with dignity.",
+  "Only 12% of women in India use commercially produced sanitary napkins—the rest rely on unsafe alternatives like rags, ash, or sand.",
+  "Women and girls spend up to 26% of their lives menstruating—yet menstrual health remains underfunded, stigmatized, and ignored.",
+  "Only 55% of healthcare facilities in least-developed countries have basic water services—putting millions of mothers and newborns at risk during childbirth.",
+  "In humanitarian crises, women and girls are 14 times more likely than men to die from lack of access to safe water, sanitation, and hygiene.",
+  "Pregnant women without access to clean water and sanitation are at higher risk of infections, sepsis, and delivering low-birth-weight babies.",
+  "Closing the gender gap in healthcare access could prevent over 3 million deaths per year—including women, newborns, and children.",
+  "Women are 80% of the world’s informal caregivers—yet their own health needs are often ignored.",
+  "Providing menstrual products and hygiene education can increase girls’ school attendance by up to 25%.",
+  "Investing $1 in sexual and reproductive health saves $3 in maternal and newborn care costs.",
+  "In some parts of rural India and Africa, up to 30% of girls miss school during their periods due to lack of sanitary products and private toilets.",
+  "Lack of gender-separated toilets in schools causes 1 in 10 school-age girls in Africa to miss school during menstruation.",
+  "Healthcare for women isn’t a luxury. Hygiene isn’t a privilege. They are fundamental rights—essential to dignity, development, and justice.",
+];
+
 
 export default function Dashboard() {
   const router = useRouter();
@@ -178,11 +212,14 @@ export default function Dashboard() {
   const [userType, setUserType] = useState<UserType>('self');
   const [uniqueId, setUniqueId] = useState<string | null>(null);
   const [targetUserEmail, setTargetUserEmail] = useState<string | null>(null);
+  const [quote, setQuote] = useState('');
 
   const [language, setLanguage] = useState('en');
 
   useEffect(() => {
     setIsClient(true);
+    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+
     const email = localStorage.getItem('currentUserEmail');
     if (!email) {
       router.push('/signin');
@@ -307,7 +344,15 @@ export default function Dashboard() {
         <div className="mb-10">
             <h2 className="text-3xl font-bold">{t.welcome}{userName ? `, ${userName}`: ''}!</h2>
             {userType === 'self' && uniqueId && <p className="text-sm text-muted-foreground">{t.her_id}: <span className="font-mono bg-muted px-2 py-1 rounded-md">{uniqueId}</span></p>}
-            <p className="text-muted-foreground mt-2">{t.explore}</p>
+            {quote && (
+              <div className="mt-4 p-4 bg-secondary/50 rounded-lg flex items-start gap-4">
+                <Quote className="h-5 w-5 text-secondary-foreground/60 shrink-0 mt-1" />
+                <p className="text-secondary-foreground italic text-sm">
+                  {quote}
+                </p>
+              </div>
+            )}
+            <p className="text-muted-foreground mt-4">{t.explore}</p>
         </div>
 
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
