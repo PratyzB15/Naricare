@@ -218,17 +218,7 @@ export function PeriodTracker() {
           onLogPeriod={handleLogPeriod}
         />
         <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Are you pregnant?</CardTitle>
-                    <CardDescription>Click here to start tracking your pregnancy journey.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handleImPregnant} size="sm">
-                        <Baby className="mr-2 h-4 w-4" /> I'm Pregnant
-                    </Button>
-                </CardContent>
-            </Card>
+            
             {prediction?.flowPrediction && (
                 <Card>
                     <CardHeader>
