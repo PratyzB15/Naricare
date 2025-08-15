@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { differenceInDays, formatISO, getMonth, getYear } from 'date-fns';
+import { differenceInDays, formatISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
@@ -13,13 +13,10 @@ import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { Checkbox } from '../ui/checkbox';
-import { Label } from '../ui/label';
 
 export type PeriodCycle = { 
   start: Date; 
   end: Date;
-  type: 'period' | 'missed';
 };
 
 export type PeriodPrediction = {
@@ -86,16 +83,14 @@ export function PeriodTracker() {
   
 
   const handlePrediction = (newCycles: PeriodCycle[]) => {
-    if(newCycles.filter(c => c.type === 'period').length === 0 || pregnancyStartDate) return;
+    if(newCycles.length === 0 || pregnancyStartDate) return;
 
     startPredictionTransition(async () => {
       try {
-        const pastCycleData = newCycles
-            .filter(c => c.type === 'period')
-            .map(c => ({
-                start: formatISO(c.start, { representation: 'date' }),
-                end: formatISO(c.end, { representation: 'date' }),
-            }));
+        const pastCycleData = newCycles.map(c => ({
+            start: formatISO(c.start, { representation: 'date' }),
+            end: formatISO(c.end, { representation: 'date' }),
+        }));
 
         const result = await predictPeriodAction({
           pastCycleData,
@@ -152,7 +147,7 @@ export function PeriodTracker() {
 
   const handleLogPeriod = (range: DateRange | undefined) => {
     if (range?.from && range?.to) {
-      const newCycle: PeriodCycle = { start: range.from, end: range.to, type: 'period' };
+      const newCycle: PeriodCycle = { start: range.from, end: range.to };
       const updatedCycles = [...cycles, newCycle].sort((a, b) => a.start.getTime() - b.start.getTime());
       setCycles(updatedCycles);
       toast({
@@ -168,38 +163,25 @@ export function PeriodTracker() {
       });
     }
   };
-
-  const handleLogMissedPeriod = () => {
+  
+  const handleImPregnant = () => {
     const today = new Date();
-    // Use the first day of the current month as start and end for a "missed" log
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const newCycle: PeriodCycle = { start: monthStart, end: monthStart, type: 'missed' };
-
-    // Check if a period (missed or regular) was already logged for this month
-    const alreadyLogged = cycles.some(c => 
-        getYear(c.start) === getYear(monthStart) && getMonth(c.start) === getMonth(monthStart)
-    );
-
-    if (alreadyLogged) {
-        toast({
-            variant: 'destructive',
-            title: 'Already Logged',
-            description: 'You have already logged a cycle for this month.'
-        });
-        return;
-    }
-
-    const updatedCycles = [...cycles, newCycle].sort((a, b) => a.start.getTime() - b.start.getTime());
-    setCycles(updatedCycles);
+    // Assuming pregnancy starts from the last menstrual period (LMP).
+    // If no cycles are logged, we can't determine this.
+    const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : null;
+    const startDate = lastCycle ? lastCycle.start : today;
+    
+    setPregnancyStartDate(startDate);
+    
     toast({
-      title: 'Missed Period Logged',
-      description: `A missed period has been logged for this month.`,
+        title: "Congratulations!",
+        description: "Pregnancy mode activated. Period tracking is now paused.",
     });
-    handlePrediction(updatedCycles);
-  };
+    router.push('/pregnancy-baby-tracker');
+  }
 
 
-  const lastCycle = cycles.filter(c => c.type === 'period').length > 0 ? cycles.filter(c => c.type === 'period').slice(-1)[0] : undefined;
+  const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
   const cycleHistory = cycles.slice().reverse();
   const pregnancyWeeks = pregnancyStartDate ? Math.floor(differenceInDays(new Date(), pregnancyStartDate) / 7) : null;
 
@@ -231,19 +213,19 @@ export function PeriodTracker() {
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 flex flex-col gap-6">
         <CalendarCard
-          cycles={cycles.filter(c => c.type === 'period')}
+          cycles={cycles}
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
-        <div className="grid md:grid-cols-1 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Log Irregularity</CardTitle>
-                    <CardDescription>Use this option if you have missed your period for the current month.</CardDescription>
+                    <CardTitle>Are you pregnant?</CardTitle>
+                    <CardDescription>Click here to start tracking your pregnancy journey.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={handleLogMissedPeriod} size="sm" variant="outline">
-                        Log Missed Period For This Month
+                    <Button onClick={handleImPregnant} size="sm">
+                        <Baby className="mr-2 h-4 w-4" /> I'm Pregnant
                     </Button>
                 </CardContent>
             </Card>
@@ -299,11 +281,7 @@ export function PeriodTracker() {
                 <CardContent>
                     <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
                         {cycleHistory.map((cycle, index) => (
-                             <li key={index}>
-                                {cycle.type === 'period'
-                                ? `Cycle ${cycleHistory.length - index}: ${cycle.start.toLocaleDateString()} - ${cycle.end.toLocaleDateString()}`
-                                : `Missed Period: ${cycle.start.toLocaleString('default', { month: 'long', year: 'numeric' })}`}
-                            </li>
+                             <li key={index}>Cycle {cycleHistory.length - index}: {cycle.start.toLocaleDateString()} - {cycle.end.toLocaleDateString()}</li>
                         ))}
                     </ul>
                 </CardContent>
