@@ -236,6 +236,17 @@ export function PeriodTracker() {
           onLogPeriod={handleLogPeriod}
         />
         <div className="grid md:grid-cols-1 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Log Irregularity</CardTitle>
+                    <CardDescription>Use this option if you have missed your period for the current month.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button onClick={handleLogMissedPeriod} size="sm" variant="outline">
+                        Log Missed Period For This Month
+                    </Button>
+                </CardContent>
+            </Card>
             {prediction?.flowPrediction && (
                 <Card>
                     <CardHeader>
@@ -261,19 +272,6 @@ export function PeriodTracker() {
         </div>
       </div>
       <div className="lg:col-span-1 flex flex-col gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Log Irregularity</CardTitle>
-            </CardHeader>
-            <CardContent className='flex items-center space-x-2'>
-                <Button onClick={handleLogMissedPeriod} size="sm" variant="outline">
-                    Log Missed Period
-                </Button>
-                <Label htmlFor="missed-period" className='text-sm text-muted-foreground'>
-                   Click here if you missed your period this month.
-                </Label>
-            </CardContent>
-        </Card>
         {prediction?.healthAnalysis && (
           <Card className="border-destructive/50">
             <CardHeader>
