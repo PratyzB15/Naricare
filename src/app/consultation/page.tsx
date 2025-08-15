@@ -200,13 +200,12 @@ const BookingDialog = ({ doctor }: { doctor: (typeof doctors)[0] }) => {
 };
 
 
-export default function ConsultationPage() {
+const DoctorListPage = ({ doctors, states }: { doctors: any[], states: string[] }) => {
     const [selectedState, setSelectedState] = useState('');
 
     const filteredDoctors = selectedState ? doctors.filter(doc => doc.state === selectedState) : doctors;
 
-  return (
-    <AppLayout>
+    return (
         <div className="container mx-auto py-8">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl">Gyno-Consultation</CardTitle>
@@ -220,36 +219,46 @@ export default function ConsultationPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All States</SelectItem>
-                        {allStates.map(state => (
+                        {states.map(state => (
                             <SelectItem key={state} value={state}>{state}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
             </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDoctors.map((doctor) => (
-            <Card key={doctor.name} className="flex flex-col">
-                <CardHeader>
-                    <CardTitle>{doctor.name}</CardTitle>
-                    <CardDescription>{doctor.specialty} - {doctor.city}, {doctor.state}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                     {doctor.highlights && <p className="text-sm text-muted-foreground">"{doctor.highlights}"</p>}
-                     <p className="font-bold text-primary mt-2">Fee: ₹{doctor.fee}</p>
-                </CardContent>
-                <CardFooter>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                             <Button className="w-full">Book an Appointment</Button>
-                        </DialogTrigger>
-                        <BookingDialog doctor={doctor} />
-                    </Dialog>
-                </CardFooter>
-            </Card>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDoctors.map((doctor) => (
+                <Card key={doctor.name} className="flex flex-col">
+                    <CardHeader>
+                        <CardTitle>{doctor.name}</CardTitle>
+                        <CardDescription>{doctor.specialty} - {doctor.city}, {doctor.state}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        {doctor.highlights && <p className="text-sm text-muted-foreground">"{doctor.highlights}"</p>}
+                        <p className="font-bold text-primary mt-2">Fee: ₹{doctor.fee}</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button className="w-full">Book an Appointment</Button>
+                            </DialogTrigger>
+                            <BookingDialog doctor={doctor} />
+                        </Dialog>
+                    </CardFooter>
+                </Card>
+                ))}
+            </div>
         </div>
-        </div>
-    </AppLayout>
-  );
+    )
+}
+
+export default function ConsultationPage() {
+    // This component remains client-side to handle the stateful filtering and dialogs.
+    // The data is passed down from a parent Server Component if we were to fully optimize.
+    // For this case, keeping it simple as the data is a small, static array.
+    return (
+        <AppLayout>
+            <DoctorListPage doctors={doctors} states={allStates} />
+        </AppLayout>
+    );
 }
