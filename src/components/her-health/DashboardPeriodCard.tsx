@@ -6,7 +6,7 @@ import { differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, MessageCircleQuestion, PartyPopper } from 'lucide-react';
+import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, PartyPopper } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -79,25 +79,32 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
         }
         
         if (weeks > 0 && weeks <= 55) {
-             startTransition(async () => {
-                try {
-                    const [progress, nutrition] = await Promise.all([
-                        getPregnancyProgressAction({ pregnancyWeeks: weeks }),
-                        getHormonalNutritionAction({ pregnancyTrimester: Math.floor(weeks / 13) + 1 })
-                    ]);
-                    setPregnancyInfo({ 
-                        week: weeks, 
-                        sizeComparison: progress.babySizeComparison,
-                        nutritionTip: nutrition.dashboardTip || "Focus on a balanced diet with plenty of fluids.",
-                    });
-                } catch (error) {
-                     toast({
-                        variant: 'destructive',
-                        title: 'Pregnancy Info Error',
-                        description: 'Could not fetch weekly pregnancy details.',
-                    });
-                }
-            });
+             const cachedInfo = localStorage.getItem(`${targetUserEmail}_pregnancyInfo_w${weeks}`);
+             if (cachedInfo) {
+                 setPregnancyInfo(JSON.parse(cachedInfo));
+             } else {
+                 startTransition(async () => {
+                    try {
+                        const [progress, nutrition] = await Promise.all([
+                            getPregnancyProgressAction({ pregnancyWeeks: weeks }),
+                            getHormonalNutritionAction({ pregnancyTrimester: Math.floor(weeks / 13) + 1 })
+                        ]);
+                        const newInfo = { 
+                            week: weeks, 
+                            sizeComparison: progress.babySizeComparison,
+                            nutritionTip: nutrition.dashboardTip || "Focus on a balanced diet with plenty of fluids.",
+                        };
+                        setPregnancyInfo(newInfo);
+                        localStorage.setItem(`${targetUserEmail}_pregnancyInfo_w${weeks}`, JSON.stringify(newInfo));
+                    } catch (error) {
+                         toast({
+                            variant: 'destructive',
+                            title: 'Pregnancy Info Error',
+                            description: 'Could not fetch weekly pregnancy details.',
+                        });
+                    }
+                });
+             }
         }
         return; // Don't load period data if pregnant
     }
@@ -139,7 +146,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
   if (!isClient) {
     return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
   }
-
+  
   if (pregnancyWeeks && pregnancyWeeks >= 50) {
       return (
          <Card className="shadow-md h-full flex flex-col bg-pink-50/50">
