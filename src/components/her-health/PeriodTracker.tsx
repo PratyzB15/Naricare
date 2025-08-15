@@ -164,23 +164,6 @@ export function PeriodTracker() {
     }
   };
   
-  const handleImPregnant = () => {
-    const today = new Date();
-    // Assuming pregnancy starts from the last menstrual period (LMP).
-    // If no cycles are logged, we can't determine this.
-    const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : null;
-    const startDate = lastCycle ? lastCycle.start : today;
-    
-    setPregnancyStartDate(startDate);
-    
-    toast({
-        title: "Congratulations!",
-        description: "Pregnancy mode activated. Period tracking is now paused.",
-    });
-    router.push('/pregnancy-baby-tracker');
-  }
-
-
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
   const cycleHistory = cycles.slice().reverse();
   const pregnancyWeeks = pregnancyStartDate ? Math.floor(differenceInDays(new Date(), pregnancyStartDate) / 7) : null;
@@ -217,31 +200,28 @@ export function PeriodTracker() {
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
-        <div className="grid md:grid-cols-2 gap-6">
-            
-            {prediction?.flowPrediction && (
-                <Card>
-                    <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Droplet />
-                        Predicted Flow
-                    </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                    <p>{prediction.flowPrediction}</p>
-                    <div className="pt-4">
-                        <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
-                        <Textarea
-                        placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
-                        value={flowFeedback}
-                        onChange={(e) => setFlowFeedback(e.target.value)}
-                        />
-                        <Button className="mt-2" size="sm">Submit Feedback</Button>
-                    </div>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
+        {prediction?.flowPrediction && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Droplet />
+                Predicted Flow
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p>{prediction.flowPrediction}</p>
+              <div className="pt-4">
+                <CardDescription className="mb-2">Did your flow match the prediction? Let us know to improve future predictions.</CardDescription>
+                <Textarea
+                  placeholder="e.g., 'My flow was heavier on the first day than predicted.'"
+                  value={flowFeedback}
+                  onChange={(e) => setFlowFeedback(e.target.value)}
+                />
+                <Button className="mt-2" size="sm">Submit Feedback</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
       <div className="lg:col-span-1 flex flex-col gap-6">
         {prediction?.healthAnalysis && (
