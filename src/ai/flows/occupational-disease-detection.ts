@@ -1,4 +1,5 @@
 'use server';
+
 /**
  * @fileOverview An AI flow for detecting diseases related to different work sectors.
  *
@@ -7,15 +8,17 @@
  * - DetectOccupationalDiseaseOutput - The return type for the detectOccupationalDisease function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
+// === Input Schema ===
 const DetectOccupationalDiseaseInputSchema = z.object({
   sector: z.enum(['desk', 'labor', 'sex_worker']).describe('The user\'s work sector.'),
   symptoms: z.array(z.string()).describe('An array of visible symptoms selected by the user.'),
 });
 export type DetectOccupationalDiseaseInput = z.infer<typeof DetectOccupationalDiseaseInputSchema>;
 
+// === Output Schema ===
 const DetectOccupationalDiseaseOutputSchema = z.object({
   disease: z.string().describe('The name of the predicted disease or condition.'),
   cause: z.string().describe('The likely cause related to the work sector exposure.'),
@@ -24,25 +27,31 @@ const DetectOccupationalDiseaseOutputSchema = z.object({
 });
 export type DetectOccupationalDiseaseOutput = z.infer<typeof DetectOccupationalDiseaseOutputSchema>;
 
+// === Main Function ===
 export async function detectOccupationalDisease(input: DetectOccupationalDiseaseInput): Promise<DetectOccupationalDiseaseOutput> {
-  return detectOccupationalDiseaseFlow(input);
+  return await detectOccupationalDiseaseFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'detectOccupationalDiseasePrompt',
-  input: {schema: DetectOccupationalDiseaseInputSchema},
-  output: {schema: DetectOccupationalDiseaseOutputSchema},
-  prompt: `You are an expert in occupational health for women. Based on the user's selected work sector and symptoms, identify the most likely disease or condition from the appropriate reference table and provide the corresponding information.
+// === AI Flow Definition ===
+const detectOccupationalDiseaseFlow = ai.defineFlow(
+  {
+    name: 'detectOccupationalDiseaseFlow',
+    inputSchema: DetectOccupationalDiseaseInputSchema,
+    outputSchema: DetectOccupationalDiseaseOutputSchema,
+  },
+  async (input) => {
+    const symptomList = input.symptoms.map(symptom => `- ${symptom}`).join('\n');
 
-**User's Work Sector:** {{{sector}}}
+    const prompt = `You are an expert in occupational health for women. Based on the user's selected work sector and symptoms, identify the most likely disease or condition from the appropriate reference table and provide the corresponding information.
+
+**User's Work Sector:** ${input.sector}
 **User's Selected Symptoms:**
-{{#each symptoms}}
-- {{{this}}}
-{{/each}}
+${symptomList}
 
-**Reference Tables by Sector:**
+### Reference Tables by Sector:
 
 ---
+
 **IF SECTOR IS 'desk' USE THIS TABLE:**
 | Symptom / Discomfort | Possible Condition / Cause | Prevention & Lifestyle Adjustments | Treatment / Medication Guidelines (Consult Doctor) |
 |---|---|---|---|
@@ -57,10 +66,11 @@ const prompt = ai.definePrompt({
 | Overall sedentary-related health risks | Cardiovascular disease, diabetes, obesity risk | - Break up sitting with short walks; regular exercise | - Lifestyle-based prevention; overall health screening |
 
 ---
+
 **IF SECTOR IS 'labor' USE THIS TABLE:**
 | Disease / Condition | Visible Symptoms | Farming Exposure Cause | Prevention | Medication / First Aid |
 |---|---|---|---|---|
-| Arsenicosis (Arsenic Poisoning) | Dark/light “raindrop” skin patches, thick palms/soles | Arsenic-contaminated groundwater | Use arsenic-free drinking water, wear gloves | No direct cure — early detection. Use safe water, topical keratolytic creams. |
+| Arsenicosis (Arsenic Poisoning) | Dark/light "raindrop" skin patches, thick palms/soles | Arsenic-contaminated groundwater | Use arsenic-free drinking water, wear gloves | No direct cure — early detection. Use safe water, topical keratolytic creams. |
 | Fluorosis | Brown-stained teeth, bent legs, joint stiffness | Fluoride-rich groundwater | Test & filter water | Dental: cosmetic treatment. Skeletal: calcium-rich diet, physiotherapy. |
 | Pesticide Dermatitis | Redness, itching, blistering | Direct skin contact with pesticide | Wear gloves, long clothes, wash after spraying | Wash affected skin, apply calamine lotion or mild steroid cream. |
 | Photodermatitis | Rash worsens in sunlight, dark patches | Pesticide/plant sap reaction in sun | Wide-brim hat, zinc oxide sunscreen | Oral antihistamines, aloe vera gel. |
@@ -80,6 +90,7 @@ const prompt = ai.definePrompt({
 | Anemia (Iron Deficiency) | Pale skin, brittle nails, fatigue | Poor diet, high physical demand | Iron-rich diet, iron supplements | Oral iron tablets, folic acid. |
 
 ---
+
 **IF SECTOR IS 'sex_worker' USE THIS TABLE:**
 | Symptom / Issue | Possible Condition / Cause | Prevention Strategies | Immediate Action / Treatment | Medication (Doctor-supervised) |
 |---|---|---|---|---|
@@ -95,23 +106,52 @@ const prompt = ai.definePrompt({
 | Severe stress, anxiety, depression | Work-related mental strain, stigma, PTSD | Counseling, support groups, mindfulness | Consult mental health professional | Antidepressants, CBT therapy |
 | Drug/alcohol dependency | Coping mechanism for stress or coercion | Seek rehabilitation support | Detox program, counseling | Medications for withdrawal |
 
----
-**Your Task:**
-1. Based on the user's sector, select the correct table.
-2. Based on their symptoms, identify the single most likely condition.
-3. Provide the corresponding 'Possible Condition / Cause' as 'cause', 'Prevention' as 'prevention', and 'Medication/Treatment' as 'medication'.
-4. Rename the 'Symptom / Discomfort' or 'Disease / Condition' or 'Symptom / Issue' column to 'disease' in the output.
-`
-});
+### Instructions:
+1. Based on the user's **sector**, select the correct reference table.
+2. Match the **symptoms** to the closest matching row.
+3. Extract the following fields:
+   - "disease": Use the **Symptom / Discomfort**, **Disease / Condition**, or **Symptom / Issue** as appropriate.
+   - "cause": Use the **Possible Condition / Cause**, **Farming Exposure Cause**, or **Possible Condition / Cause** column.
+   - "prevention": Use the **Prevention & Lifestyle Adjustments**, **Prevention**, or **Prevention Strategies**.
+   - "medication": Use the **Treatment / Medication Guidelines**, **Medication / First Aid**, or **Medication (Doctor-supervised)**.
 
-const detectOccupationalDiseaseFlow = ai.defineFlow(
-  {
-    name: 'detectOccupationalDiseaseFlow',
-    inputSchema: DetectOccupationalDiseaseInputSchema,
-    outputSchema: DetectOccupationalDiseaseOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    return output!;
+⚠️ Output ONLY a valid JSON object with keys: disease, cause, prevention, medication.
+Do NOT include markdown, code blocks, explanations, or extra text.
+Return only the raw JSON object.
+`;
+
+    try {
+      const result = await ai.generate({
+        model: 'googleai/gemini-1.5-flash',
+        prompt,
+        output: {
+          schema: DetectOccupationalDiseaseOutputSchema,
+          format: 'json',
+        },
+        config: {
+          temperature: 0.2,
+          topK: 30,
+          topP: 0.8,
+        },
+      });
+
+      // ✅ Use `result.output` (NOT `result.output()`)
+      const output = result.output;
+
+      // ✅ Check if output is defined before returning
+      if (!output) {
+        throw new Error('AI returned no valid output');
+      }
+
+      return output;
+    } catch (error: any) {
+      console.error('Error in detectOccupationalDiseaseFlow:', error.message);
+      return {
+        disease: "Unknown condition",
+        cause: `Could not determine cause for symptoms in ${input.sector} sector.`,
+        prevention: "Consult a healthcare provider for occupational health advice.",
+        medication: "Please see a doctor for proper diagnosis and treatment.",
+      };
+    }
   }
 );

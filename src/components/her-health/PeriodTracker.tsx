@@ -2,21 +2,24 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { differenceInDays, formatISO } from 'date-fns';
+import { differenceInDays, formatISO, startOfMonth, endOfMonth } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarCard } from '@/components/her-health/CalendarCard';
 import { CyclePhaseCard } from '@/components/her-health/CyclePhaseCard';
 import { predictPeriodAction } from '@/app/actions';
-import { AlertTriangle, HeartPulse, Info, Droplet, Baby } from 'lucide-react';
+import { AlertTriangle, HeartPulse, Info, Droplet, Baby, CalendarX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Checkbox } from '../ui/checkbox';
+import { Label } from '../ui/label';
 
 export type PeriodCycle = { 
   start: Date; 
   end: Date;
+  type: 'period' | 'no_period';
 };
 
 export type PeriodPrediction = {
@@ -30,7 +33,7 @@ export type PeriodPrediction = {
 export function PeriodTracker() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isPredicting, startPredictionTransition] = useTransition();
+  const [, startPredictionTransition] = useTransition();
   const [userProfile, setUserProfile] = useState({ age: null, medicalHistory: '' }); 
   const [isClient, setIsClient] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -39,6 +42,7 @@ export function PeriodTracker() {
   const [prediction, setPrediction] = useState<PeriodPrediction | null>(null);
   const [flowFeedback, setFlowFeedback] = useState('');
   const [pregnancyStartDate, setPregnancyStartDate] = useState<Date | null>(null);
+  const [noPeriodThisMonth, setNoPeriodThisMonth] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -56,7 +60,12 @@ export function PeriodTracker() {
     }
     const savedCycles = localStorage.getItem(`${email}_periodCycles`);
     if (savedCycles) {
-      const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ ...c, start: new Date(c.start), end: new Date(c.end) }));
+      const parsedCycles = JSON.parse(savedCycles).map((c: any) => ({ 
+        ...c, 
+        start: new Date(c.start), 
+        end: new Date(c.end),
+        type: c.type || 'period' // Default to 'period' for backward compatibility
+      }));
       setCycles(parsedCycles);
     }
     
@@ -87,7 +96,9 @@ export function PeriodTracker() {
 
     startPredictionTransition(async () => {
       try {
-        const pastCycleData = newCycles.map(c => ({
+        // Only use period cycles for prediction, not no_period cycles
+        const periodCycles = newCycles.filter(cycle => cycle.type === 'period');
+        const pastCycleData = periodCycles.map(c => ({
             start: formatISO(c.start, { representation: 'date' }),
             end: formatISO(c.end, { representation: 'date' }),
         }));
@@ -147,7 +158,7 @@ export function PeriodTracker() {
 
   const handleLogPeriod = (range: DateRange | undefined) => {
     if (range?.from && range?.to) {
-      const newCycle: PeriodCycle = { start: range.from, end: range.to };
+      const newCycle: PeriodCycle = { start: range.from, end: range.to, type: 'period' };
       const updatedCycles = [...cycles, newCycle].sort((a, b) => a.start.getTime() - b.start.getTime());
       setCycles(updatedCycles);
       toast({
@@ -162,6 +173,44 @@ export function PeriodTracker() {
         description: 'Please select a start and end date for your period.',
       });
     }
+  };
+
+  const handleNoPeriodThisMonth = () => {
+    const currentMonthStart = startOfMonth(new Date());
+    const currentMonthEnd = endOfMonth(new Date());
+    
+    // Check if we already have a no_period entry for this month
+    const hasNoPeriodThisMonth = cycles.some(cycle => 
+      cycle.type === 'no_period' && 
+      cycle.start.getTime() === currentMonthStart.getTime() &&
+      cycle.end.getTime() === currentMonthEnd.getTime()
+    );
+
+    if (hasNoPeriodThisMonth) {
+      toast({
+        variant: 'destructive',
+        title: 'Already Logged',
+        description: 'You have already logged no period for this month.',
+      });
+      return;
+    }
+
+    const noPeriodCycle: PeriodCycle = { 
+      start: currentMonthStart, 
+      end: currentMonthEnd, 
+      type: 'no_period' 
+    };
+    
+    const updatedCycles = [...cycles, noPeriodCycle].sort((a, b) => a.start.getTime() - b.start.getTime());
+    setCycles(updatedCycles);
+    setNoPeriodThisMonth(false);
+    
+    toast({
+      title: 'No Period Logged',
+      description: 'Marked this month as having no period.',
+    });
+    
+    handlePrediction(updatedCycles);
   };
   
   const lastCycle = cycles.length > 0 ? cycles[cycles.length - 1] : undefined;
@@ -200,6 +249,41 @@ export function PeriodTracker() {
           prediction={prediction}
           onLogPeriod={handleLogPeriod}
         />
+        
+        {/* No Period This Month Checkbox */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarX className="h-5 w-5" />
+              No Period This Month
+            </CardTitle>
+            <CardDescription>
+              If you didn't have your period this month, check this box to log it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="no-period" 
+                checked={noPeriodThisMonth}
+                onCheckedChange={(checked) => setNoPeriodThisMonth(checked as boolean)}
+              />
+              <Label htmlFor="no-period" className="cursor-pointer">
+                I didn't have my period this month
+              </Label>
+            </div>
+            {noPeriodThisMonth && (
+              <Button 
+                onClick={handleNoPeriodThisMonth} 
+                className="mt-4"
+                variant="outline"
+              >
+                Confirm No Period
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {prediction?.flowPrediction && (
           <Card>
             <CardHeader>
@@ -238,7 +322,7 @@ export function PeriodTracker() {
           </Card>
         )}
         
-        <CyclePhaseCard lastCycleStart={lastCycle?.start} />
+        <CyclePhaseCard lastCycleStart={lastCycle?.type === 'period' ? lastCycle.start : undefined} />
         
         {cycleHistory.length > 0 && (
              <Card>
@@ -251,7 +335,15 @@ export function PeriodTracker() {
                 <CardContent>
                     <ul className="space-y-2 text-sm max-h-48 overflow-y-auto">
                         {cycleHistory.map((cycle, index) => (
-                             <li key={index}>Cycle {cycleHistory.length - index}: {cycle.start.toLocaleDateString()} - {cycle.end.toLocaleDateString()}</li>
+                             <li key={index}>
+                                {cycle.type === 'no_period' ? (
+                                    <span className="text-muted-foreground">
+                                        Month of {cycle.start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}: No period
+                                    </span>
+                                ) : (
+                                    `Cycle ${cycleHistory.length - index}: ${cycle.start.toLocaleDateString()} - ${cycle.end.toLocaleDateString()}`
+                                )}
+                             </li>
                         ))}
                     </ul>
                 </CardContent>

@@ -10,6 +10,8 @@ import { Zap, Moon, Sun, Leaf, Droplet, ArrowRight, Baby, Loader2, Utensils, Par
 import { useRouter } from 'next/navigation';
 import { getPregnancyProgressAction, getHormonalNutritionAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const phases = {
   menstrual: { name: 'Menstrual', Icon: Droplet, recommendation: "During your menstrual phase, focus on iron-rich foods like spinach and lentils, stay hydrated, and consider foods rich in Vitamin C like oranges to help with iron absorption. Magnesium from nuts and seeds can help with cramps." },
@@ -143,13 +145,20 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
 
   const phaseData = currentPhase ? phases[currentPhase] : null;
 
+  const cardBaseClasses = "shadow-lg h-full flex flex-col transition-all duration-300";
+  const cardAnimatedClasses = "dark:bg-transparent dark:backdrop-blur-sm dark:border-transparent dark:relative dark:p-px dark:rounded-2xl dark:before:absolute dark:before:inset-0 dark:before:rounded-2xl dark:before:bg-primary/20 dark:before:opacity-0 dark:hover:before:opacity-100 dark:after:absolute dark:after:inset-0 dark:after:rounded-2xl dark:after:[background:conic-gradient(from_var(--angle),_hsl(var(--primary)/0.4),_hsl(var(--primary))_50%,_hsl(var(--primary)/0.4))] dark:after:[animation:animated-border_2s_linear_infinite] dark:[--angle:0deg]";
+
   if (!isClient) {
-    return <Card className="shadow-md h-full flex flex-col"><CardHeader><CardTitle>Loading...</CardTitle></CardHeader></Card>;
+    return (
+      <Card className={cn(cardBaseClasses, "flex items-center justify-center")}>
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </Card>
+    );
   }
   
   if (pregnancyWeeks && pregnancyWeeks >= 50) {
       return (
-         <Card className="shadow-md h-full flex flex-col bg-pink-50/50">
+         <Card className={cn(cardBaseClasses, "bg-pink-50/50 dark:bg-pink-900/20")}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-pink-600">
                     <PartyPopper />
@@ -158,7 +167,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
                  <CardDescription>You've brought a new life to earth. It's time to focus on your recovery and your baby's growth.</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                <p>Please go to the Pregnancy &amp; Baby Tracker to log your baby's details and get personalized advice for your recovery.</p>
+                <p>Please go to the Pregnancy & Baby Tracker to log your baby's details and get personalized advice for your recovery.</p>
                  {pregnancyInfo && (
                      <div className='mt-4'>
                         <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Utensils className="h-4 w-4" /> Nutrition Tip</p>
@@ -183,7 +192,7 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
   
   if (pregnancyStartDate) {
     return (
-        <Card className="shadow-md h-full flex flex-col bg-teal-50/50">
+        <Card className={cn(cardBaseClasses, "bg-teal-50/50 dark:bg-teal-900/20")}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-teal-600">
                     <Baby />
@@ -234,55 +243,57 @@ export function DashboardPeriodCard({ userType, targetUserEmail }: DashboardPeri
   }
 
   return (
-    <Card className="shadow-md h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap />
-          Her Cycle At a Glance
-        </CardTitle>
-         {userType === 'family' && <CardDescription>Tracking cycle for your family member.</CardDescription>}
-      </CardHeader>
-      <CardContent className="flex-grow space-y-4">
-        {!lastCycleStart || !phaseData ? (
-          <Alert>
-            <AlertTitle>Welcome!</AlertTitle>
-            <AlertDescription>
-              {userType === 'self' ? 'Log your first period in the tracker to get started.' : 'Waiting for the user to log their first period.'}
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Current Phase</p>
-              <div className="flex items-center gap-3">
-                {phaseData.Icon && <phaseData.Icon className="h-8 w-8 text-primary" />}
-                <p className="text-xl font-semibold">{phaseData.name}</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Next Predicted Period</p>
-              <p className="text-xl font-semibold">
-                {prediction ? new Date(prediction.predictedStartDate).toLocaleDateString() : 'Calculating...'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Recommendation</p>
-              <p className="font-medium text-base">
-                {phaseData.recommendation}
-              </p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-      {userType === 'self' && (
-        <CardContent>
-            <Button asChild className="w-full">
-            <Link href="/period-tracker">
-                Go to Period Tracker <ArrowRight className="ml-2" />
-            </Link>
-            </Button>
-        </CardContent>
-      )}
-    </Card>
+    <div className={cn(cardBaseClasses, cardAnimatedClasses)}>
+        <Card className='z-10 bg-card h-full flex flex-col'>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                <Zap />
+                Her Cycle At a Glance
+                </CardTitle>
+                {userType === 'family' && <CardDescription>Tracking cycle for your family member.</CardDescription>}
+            </CardHeader>
+            <CardContent className="flex-grow space-y-4">
+                {!lastCycleStart || !phaseData ? (
+                <Alert>
+                    <AlertTitle>Welcome!</AlertTitle>
+                    <AlertDescription>
+                    {userType === 'self' ? 'Log your first period in the tracker to get started.' : 'Waiting for the user to log their first period.'}
+                    </AlertDescription>
+                </Alert>
+                ) : (
+                <div className="space-y-4">
+                    <div>
+                    <p className="text-sm text-muted-foreground">Current Phase</p>
+                    <div className="flex items-center gap-3">
+                        {phaseData.Icon && <phaseData.Icon className="h-8 w-8 text-primary" />}
+                        <p className="text-xl font-semibold">{phaseData.name}</p>
+                    </div>
+                    </div>
+                    <div>
+                    <p className="text-sm text-muted-foreground">Next Predicted Period</p>
+                    <p className="text-xl font-semibold">
+                        {prediction ? new Date(prediction.predictedStartDate).toLocaleDateString() : 'Calculating...'}
+                    </p>
+                    </div>
+                    <div>
+                    <p className="text-sm text-muted-foreground">Recommendation</p>
+                    <p className="font-medium text-base">
+                        {phaseData.recommendation}
+                    </p>
+                    </div>
+                </div>
+                )}
+            </CardContent>
+            {userType === 'self' && (
+                <CardContent>
+                    <Button asChild className="w-full">
+                    <Link href="/period-tracker">
+                        Go to Period Tracker <ArrowRight className="ml-2" />
+                    </Link>
+                    </Button>
+                </CardContent>
+            )}
+        </Card>
+    </div>
   );
 }

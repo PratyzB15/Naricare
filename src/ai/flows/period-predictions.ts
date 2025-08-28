@@ -1,51 +1,57 @@
 'use server';
+
 /**
- * @fileOverview Predicts the start date of the next period by analyzing past cycle data and considering other inputs like mood and physical symptoms.
+ * @fileOverview Predicts the start date of the next period by analyzing past cycle data and considering mood, symptoms, age, and medical history.
  *
- * - predictPeriod - A function that handles the period prediction process.
- * - PredictPeriodInput - The input type for the predictPeriod function.
- * - PredictPeriodOutput - The return type for the predictPeriod function.
+ * - predictPeriod - Main function to trigger prediction
+ * - PredictPeriodInput - Input schema
+ * - PredictPeriodOutput - Output schema with predicted date, confidence, reasoning, health analysis, and flow
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
+// === Input Schema ===
 const PredictPeriodInputSchema = z.object({
   pastCycleData: z
-    .array(z.object({
-        start: z.string().describe('The start date of the period in ISO format (YYYY-MM-DD).'),
-        end: z.string().describe('The end date of the period in ISO format (YYYY-MM-DD).'),
-    }))
-    .describe('An array of past period start and end dates.'),
-  mood: z.string().describe('The user current mood.'),
-  physicalSymptoms: z.string().describe('The user physical symptoms.'),
-  age: z.number().optional().describe('The age of the user.'),
-  medicalHistory: z.string().optional().describe('Any pre-existing medical conditions like Thyroid, PCOS etc.'),
+    .array(
+      z.object({
+        start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be ISO date string (YYYY-MM-DD)'),
+        end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be ISO date string (YYYY-MM-DD)'),
+      })
+    )
+    .min(1, 'At least one past cycle is required')
+    .describe('Array of past period start and end dates in ISO format.'),
+  mood: z.string().describe('User’s current mood.'),
+  physicalSymptoms: z.string().describe('User’s current physical symptoms.'),
+  age: z.number().optional().describe('User’s age.'),
+  medicalHistory: z.string().optional().describe('Pre-existing conditions like PCOS, Thyroid, etc.'),
 });
 export type PredictPeriodInput = z.infer<typeof PredictPeriodInputSchema>;
 
+// === Output Schema ===
 const PredictPeriodOutputSchema = z.object({
   predictedStartDate: z
     .string()
-    .describe('The predicted start date of the next period in ISO format (YYYY-MM-DD).'),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be valid ISO date string (YYYY-MM-DD)')
+    .describe('Predicted start date of next period.'),
   confidence: z
     .number()
-    .describe('A number between 0 and 1 indicating the confidence in the prediction.'),
-  reasoning: z.string().describe('The reasoning behind the prediction.'),
-  healthAnalysis: z.string().optional().describe('An analysis of menstrual health, including warnings for PCOS/PCOD, irregularities, or menopause based on cycle history, age and medical conditions.'),
-  flowPrediction: z.string().optional().describe('A day-by-day prediction of the menstrual flow (e.g., "Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light").'),
+    .min(0)
+    .max(1)
+    .describe('Confidence score between 0 and 1 based on cycle regularity.'),
+  reasoning: z.string().describe('Explanation of prediction logic.'),
+  healthAnalysis: z.string().optional().describe('Analysis of menstrual health including PCOS, menopause, irregularities.'),
+  flowPrediction: z.string().optional().describe('Day-by-day flow intensity, e.g., "Day 1: Medium, Day 2: Heavy..."'),
 });
 export type PredictPeriodOutput = z.infer<typeof PredictPeriodOutputSchema>;
 
-export async function predictPeriod(input: PredictPeriodInput): Promise<PredictPeriodOutput> {
-  return predictPeriodFlow(input);
-}
-
-const prompt = ai.definePrompt({
+// === Define Prompt with Handlebars Syntax ===
+const predictPeriodPrompt = ai.definePrompt({
   name: 'predictPeriodPrompt',
-  input: {schema: PredictPeriodInputSchema},
-  output: {schema: PredictPeriodOutputSchema},
-  prompt: `You are an AI period prediction and women's health expert. You will predict the start date of the next period and analyze the user's menstrual health based on their past cycle data, age, medical history, mood, and physical symptoms.
+  input: { schema: PredictPeriodInputSchema },
+  output: { schema: PredictPeriodOutputSchema },
+  prompt: `You are an AI women's health expert specializing in menstrual cycle prediction and analysis.
 
 **User Information:**
 - Age: {{{age}}}
@@ -56,33 +62,101 @@ const prompt = ai.definePrompt({
 
 **Your Tasks:**
 
-1.  **Predict Next Period:**
-    *   First, calculate the average cycle length from the provided pastCycleData. A cycle is the time from the start of one period to the start of the next.
-    *   Based on this average, predict the predictedStartDate of the next menstrual cycle by adding the average cycle length to the start date of the most recent period. A typical cycle is 28-32 days, but you must use the user's historical average.
-    *   Provide a confidence score (0-1). Confidence should be higher for users with very regular cycles.
-    *   Provide your reasoning, explaining the average cycle length you calculated and how you used it for the prediction.
+1. **Predict Next Period Start Date**
+   - Calculate the average cycle length (in days) from the provided pastCycleData. A cycle is the number of days between the start of one period and the next.
+   - Use this average to predict the **predictedStartDate** by adding it to the most recent period's start date.
+   - Return the date in strict ISO format: YYYY-MM-DD.
+   - Assign a **confidence** score (0–1):
+     - 0.9–1.0: Cycles very regular (±1–2 days)
+     - 0.7–0.8: Slight variation (±3–4 days)
+     - 0.5–0.6: Moderately irregular
+     - <0.5: Highly irregular or insufficient data
+   - Provide **reasoning** explaining the average and confidence.
 
-2.  **Analyze Menstrual Health:** Provide a healthAnalysis. This is crucial.
-    *   **Cycle Regularity:** Analyze the cycle lengths. A normal cycle is 21-35 days. If cycles are consistently shorter or longer, or vary wildly, it's irregular. Mention this.
-    *   **PCOS/PCOD Detection:** If you see a history of very irregular or missed periods (e.g., cycles longer than 35-40 days, or large variations), especially if combined with a medical history of PCOS, flag this. Mention symptoms like irregular periods. Suggest seeing a doctor.
-    *   **Menopause Detection:** If the user is over 45-50 and has highly irregular or missed periods, consider mentioning that perimenopause or menopause can cause such changes.
-    *   **Personalization:** Use the age and medicalHistory (e.g., Thyroid issues) to make your analysis more accurate. Thyroid issues can cause irregular periods.
+2. **Analyze Menstrual Health (healthAnalysis)**
+   - **Regularity**: Normal cycle length is 21–35 days. Flag if cycles are consistently shorter, longer, or vary by more than 5 days.
+   - **PCOS/PCOD Risk**: If cycles are frequently >35 days, highly irregular, or skipped — especially if medical history mentions PCOS — indicate possible PCOS. Suggest consulting a doctor.
+   - **Perimenopause/Menopause**: If age ≥ 45 and cycles are becoming irregular or longer, mention perimenopause as a likely factor.
+   - **Thyroid & Other Factors**: Note that thyroid disorders, stress, or extreme mood changes can disrupt cycles.
+   - Always personalize advice using age and medical history.
 
-3.  **Predict Flow Intensity:** Provide a day-by-day flowPrediction for the next cycle. A standard pattern is: Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light.
+3. **Predict Flow Intensity (flowPrediction)**
+   - Provide a day-by-day prediction of flow for the upcoming period.
+   - Format: "Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light"
+   - Adjust based on symptoms:
+     - Fatigue, cramps → heavier flow
+     - Low energy, spotting → lighter flow
+     - Mood swings → possible hormonal fluctuations
 
-**Output Format:**
-Provide your response in a clear JSON format. If there are no health concerns, the healthAnalysis can be a simple statement like "Your cycles appear to be regular and healthy."
+**Output Format**
+Return ONLY a valid JSON object with these keys:
+{
+  "predictedStartDate": "YYYY-MM-DD",
+  "confidence": 0.8,
+  "reasoning": "...",
+  "healthAnalysis": "...",
+  "flowPrediction": "Day 1: Medium, Day 2: Heavy, ..."
+}
+⚠️ DO NOT include markdown, explanations, or code blocks. Return only raw JSON.
 `,
 });
 
+// === Main Flow ===
 const predictPeriodFlow = ai.defineFlow(
   {
     name: 'predictPeriodFlow',
     inputSchema: PredictPeriodInputSchema,
     outputSchema: PredictPeriodOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+      const result = await predictPeriodPrompt(input);
+      const output = result.output;
+
+      if (!output) throw new Error('AI returned no output');
+
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(output.predictedStartDate)) {
+        throw new Error('Invalid predictedStartDate format');
+      }
+
+      return output;
+    } catch (error: any) {
+      console.error('AI prediction failed:', error.message);
+      // Fallback logic
+      const lastStart = new Date(input.pastCycleData[input.pastCycleData.length - 1].start);
+      const avgLength = _calculateAverageCycleLength(input.pastCycleData);
+      const predictedDate = new Date(lastStart);
+      predictedDate.setDate(predictedDate.getDate() + avgLength);
+      const predictedStartDate = predictedDate.toISOString().split('T')[0];
+
+      return {
+        predictedStartDate,
+        confidence: 0.5,
+        reasoning: 'Fallback: Used average cycle length due to AI error.',
+        healthAnalysis:
+          'Could not perform full health analysis. Ensure at least 3–6 cycles are logged for accurate insights. Consult a healthcare provider for concerns about PCOS, menopause, or irregular cycles.',
+        flowPrediction: 'Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light',
+      };
+    }
   }
 );
+
+// === Exported Function ===
+export async function predictPeriod(input: PredictPeriodInput): Promise<PredictPeriodOutput> {
+  return await predictPeriodFlow(input);
+}
+
+// === Helper: Calculate Average Cycle Length ===
+function _calculateAverageCycleLength(cycles: { start: string }[]): number {
+  if (cycles.length < 2) return 28;
+
+  const diffs = cycles.slice(1).map((cycle, i) => {
+    const prev = new Date(cycles[i].start);
+    const curr = new Date(cycle.start);
+    return Math.floor((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+  });
+
+  const sum = diffs.reduce((a, b) => a + b, 0);
+  return Math.round(sum / diffs.length);
+}
