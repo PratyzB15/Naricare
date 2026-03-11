@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 
 
-type ChatMessage = {
+type ChatMessage = { 
   role: 'user' | 'bot';
   content: string;
 };

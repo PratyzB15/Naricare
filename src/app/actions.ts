@@ -12,7 +12,7 @@ import { babyGrowthAnalysis, type BabyGrowthAnalysisInput } from '@/ai/flows/bab
 import { pregnancySymptomChecker, type PregnancySymptomCheckerInput } from '@/ai/flows/pregnancy-symptom-checker';
 
 export async function predictPeriodAction(input: PredictPeriodInput) {
-  try {
+  try { 
     return await predictPeriod(input);
   } catch (e) {
     console.error('predictPeriodAction error:', e);
@@ -25,7 +25,20 @@ export async function getHormonalNutritionAction(input: HormonalCycleNutritionIn
     return await getHormonalCycleNutrition(input);
   } catch (e) {
     console.error('getHormonalNutritionAction error:', e);
-    throw new Error('Failed to get nutrition advice from AI.');
+    
+    // Enhanced error handling for debugging
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred';
+    const errorStack = e instanceof Error ? e.stack : 'No stack trace available';
+    
+    console.error('Detailed getHormonalNutritionAction error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      input: input,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Throw error with more context while keeping user-friendly message
+    throw new Error(`Failed to get nutrition advice from AI. Details: ${errorMessage}`);
   }
 }
 

@@ -16,7 +16,7 @@ export const helloFlow = ai.defineFlow(
   },
   async (input) => {
     const { text } = await ai.generate({
-      model: googleAI.model("gemini-2.5-flash"),
+      model: googleAI.model("'googleai/gemini-1.5-pro'"),
       prompt: `Hello, ${input}!`,
     });
     return text;

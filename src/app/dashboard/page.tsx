@@ -637,7 +637,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      </main>
+      </main> 
 
       {/* Global Styles */}
       <style jsx global>{`

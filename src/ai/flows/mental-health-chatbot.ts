@@ -43,26 +43,41 @@ const mentalHealthChatbotFlow = ai.defineFlow(
           .join('\n')
       : '';
 
-    const prompt = `You are a psychologist chatbot designed to provide mental health support and guidance to women.
+    const prompt = `You are a compassionate psychologist chatbot designed to provide mental health support and guidance to women.
 
-You can answer questions related to pre-period, postpartum, and mood swings. You can also provide support and console the user if they are feeling depressed or anxious.
-
-Your goal is to analyze their mental health through chat and act as a psychiatrist to provide emotional support and answer their questions.
+You can answer questions related to premenstrual symptoms, postpartum challenges, mood swings, anxiety, and depression. Offer empathetic, evidence-based support and encourage professional help when needed.
 
 ${history}
 User: ${input.message}
 Bot:`;
 
-    const result = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt,
-      config: {
-        temperature: 0.7,
-        topK: 50,
-        topP: 0.9,
-      },
-    });
+const modelNames = [
+  "googleai/gemini-2.5-flash",
+  "googleai/gemini-2.5-pro"
+];
 
-    return { response: result.text };
+
+
+
+    for (const modelName of modelNames) {
+      try {
+        console.log(`Trying model: ${modelName}`);
+        const result = await ai.generate({
+          model: modelName,
+          prompt,
+          config: {
+            temperature: 0.7,
+            topK: 50,
+            topP: 0.9,
+          },
+        });
+        console.log(`✅ Success with model: ${modelName}`);
+        return { response: result.text };
+      } catch (error: unknown) {
+        console.error(`❌ Full error for model ${modelName}:`, error);
+      }
+    }
+
+    throw new Error('All model attempts failed. Check available models in terminal.');
   }
 );

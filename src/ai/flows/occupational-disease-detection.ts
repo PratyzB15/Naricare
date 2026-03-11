@@ -1,157 +1,321 @@
 'use server';
 
-/**
- * @fileOverview An AI flow for detecting diseases related to different work sectors.
- *
- * - detectOccupationalDisease - A function that handles disease detection based on symptoms and sector.
- * - DetectOccupationalDiseaseInput - The input type for the detectOccupationalDisease function.
- * - DetectOccupationalDiseaseOutput - The return type for the detectOccupationalDisease function.
- */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { ai } from '@/ai/genkit';
 
-// === Input Schema ===
+// ================= INPUT SCHEMA =================
+
 const DetectOccupationalDiseaseInputSchema = z.object({
-  sector: z.enum(['desk', 'labor', 'sex_worker']).describe('The user\'s work sector.'),
-  symptoms: z.array(z.string()).describe('An array of visible symptoms selected by the user.'),
+  sector: z.enum(['desk', 'labor', 'sex_worker']),
+  symptoms: z.array(z.string()),
 });
-export type DetectOccupationalDiseaseInput = z.infer<typeof DetectOccupationalDiseaseInputSchema>;
 
-// === Output Schema ===
-const DetectOccupationalDiseaseOutputSchema = z.object({
-  disease: z.string().describe('The name of the predicted disease or condition.'),
-  cause: z.string().describe('The likely cause related to the work sector exposure.'),
-  prevention: z.string().describe('Recommended prevention methods.'),
-  medication: z.string().describe('Recommended medication, first aid, or treatment guidelines.'),
-});
-export type DetectOccupationalDiseaseOutput = z.infer<typeof DetectOccupationalDiseaseOutputSchema>;
+export type DetectOccupationalDiseaseInput = z.infer<
+  typeof DetectOccupationalDiseaseInputSchema
+>;
 
-// === Main Function ===
-export async function detectOccupationalDisease(input: DetectOccupationalDiseaseInput): Promise<DetectOccupationalDiseaseOutput> {
-  return await detectOccupationalDiseaseFlow(input);
-}
+// ================= OUTPUT TYPE =================
 
-// === AI Flow Definition ===
-const detectOccupationalDiseaseFlow = ai.defineFlow(
-  {
-    name: 'detectOccupationalDiseaseFlow',
-    inputSchema: DetectOccupationalDiseaseInputSchema,
-    outputSchema: DetectOccupationalDiseaseOutputSchema,
+export type DetectOccupationalDiseaseOutput = {
+  disease: string;
+  cause: string;
+  prevention: string;
+  medication: string;
+};
+
+// ================= DESK SECTOR MAP (COMPLETE) =================
+
+const DESK_SECTOR_MAP: Record<string, DetectOccupationalDiseaseOutput> = {
+  "Neck, shoulder, upper-back pain": {
+    disease: "Cervical Spondylosis / Upper Cross Syndrome",
+    cause: "Poor posture, prolonged sitting, improper desk ergonomics, and muscle strain from static positions.",
+    prevention: "Maintain proper posture, use ergonomic chairs, adjust monitor height, take regular breaks for stretching.",
+    medication: "Over-the-counter pain relievers, physical therapy, muscle relaxants for severe cases.",
   },
-  async (input) => {
-    const symptomList = input.symptoms.map(symptom => `- ${symptom}`).join('\n');
+  "Wrist/hand tingling or numbness": {
+    disease: "Carpal Tunnel Syndrome",
+    cause: "Repetitive hand movements, improper wrist positioning, prolonged typing or mouse use.",
+    prevention: "Use ergonomic keyboards, wrist rests, maintain neutral wrist position, take frequent hand breaks.",
+    medication: "Wrist splints, NSAIDs, corticosteroid injections, surgery in severe cases.",
+  },
+  "Eye strain, headaches": {
+    disease: "Computer Vision Syndrome",
+    cause: "Prolonged screen time, improper lighting, glare, uncorrected vision problems, and dry eyes.",
+    prevention: "Follow 20-20-20 rule (every 20 minutes, look 20 feet away for 20 seconds), proper lighting, screen filters.",
+    medication: "Artificial tears, prescription glasses for computer use, blue light filtering lenses.",
+  },
+  "Leg swelling, fatigue, varicose veins": {
+    disease: "Chronic Venous Insufficiency",
+    cause: "Prolonged sitting slows blood circulation in the legs.",
+    prevention: "Stand and walk every 30–60 minutes, elevate legs, wear compression stockings.",
+    medication: "Compression therapy for mild cases. Moderate–severe: sclerotherapy or RF ablation.",
+  },
+  "Fatigue, mental fog, stress": {
+    disease: "Occupational Burnout / Chronic Fatigue Syndrome",
+    cause: "High cognitive load, poor work-life balance, inadequate breaks, and mental exhaustion.",
+    prevention: "Regular breaks, mindfulness practices, task prioritization, maintain sleep hygiene.",
+    medication: "Counseling, stress management techniques, cognitive behavioral therapy.",
+  },
+  "Urinary urgency / incontinence": {
+    disease: "Occupational Bladder Dysfunction",
+    cause: "Delaying bathroom breaks due to work demands, excessive caffeine intake, and pelvic floor weakness.",
+    prevention: "Schedule regular bathroom breaks, reduce caffeine, practice pelvic floor exercises.",
+    medication: "Bladder training, anticholinergic medications, pelvic floor physical therapy.",
+  },
+  "Musculoskeletal pain (back, knees)": {
+    disease: "Repetitive Strain Injury / Degenerative Joint Disease",
+    cause: "Poor ergonomics, inadequate seating, lack of movement, and cumulative trauma from static postures.",
+    prevention: "Use ergonomic furniture, alternate between sitting and standing, regular stretching exercises.",
+    medication: "Physical therapy, anti-inflammatory medications, joint supplements for long-term health.",
+  },
+  "Cold-induced stiffness, discomfort": {
+    disease: "Raynaud's Phenomenon / Cold Aggravated Arthritis",
+    cause: "Poor office temperature control, cold environments exacerbating circulatory and joint issues.",
+    prevention: "Maintain comfortable office temperature, use space heaters, wear warm clothing layers.",
+    medication: "Vasodilators for Raynaud's, joint protectants, thermal therapy.",
+  },
+  "Overall sedentary-related health risks": {
+    disease: "Metabolic Syndrome / Sedentary Lifestyle Syndrome",
+    cause: "Lack of physical activity, poor diet, and prolonged sitting leading to systemic health decline.",
+    prevention: "Incorporate regular exercise, take walking meetings, use standing desks, maintain balanced nutrition.",
+    medication: "Lifestyle modification programs, regular health screenings, metabolic monitoring.",
+  },
+};
 
-    const prompt = `You are an expert in occupational health for women. Based on the user's selected work sector and symptoms, identify the most likely disease or condition from the appropriate reference table and provide the corresponding information.
+// ================= LABOR SECTOR MAP (COMPLETE) =================
 
-**User's Work Sector:** ${input.sector}
-**User's Selected Symptoms:**
-${symptomList}
+const LABOR_SECTOR_MAP: Record<string, DetectOccupationalDiseaseOutput> = {
+  "Dark/light 'raindrop' skin patches, thick palms/soles, wart-like growths, brittle nails": {
+    disease: "Arsenicosis / Heavy Metal Poisoning",
+    cause: "Exposure to arsenic or heavy metals through contaminated water, soil, or industrial materials.",
+    prevention: "Use protective gloves and clothing, proper washing facilities, regular health monitoring.",
+    medication: "Chelation therapy, dermatological treatments, nutritional supplements.",
+  },
+  "Brown-stained teeth, bent legs, joint stiffness": {
+    disease: "Skeletal Fluorosis / Dental Fluorosis",
+    cause: "Chronic exposure to high fluoride levels in water, dust, or industrial processes.",
+    prevention: "Use filtered water, respiratory protection in dusty environments, regular dental checkups.",
+    medication: "Nutritional support, pain management, orthopedic interventions for advanced cases.",
+  },
+  "Redness, itching, blistering on skin": {
+    disease: "Contact Dermatitis / Occupational Eczema",
+    cause: "Exposure to irritants like chemicals, solvents, or allergens in the workplace.",
+    prevention: "Use protective clothing, barrier creams, proper hygiene practices, allergen identification.",
+    medication: "Topical corticosteroids, antihistamines, immunomodulators for severe cases.",
+  },
+  "Rash that worsens in sunlight, dark patches": {
+    disease: "Photoallergic Dermatitis / Phytophotodermatitis",
+    cause: "Interaction between sunlight and certain chemicals or plant substances on the skin.",
+    prevention: "Sun protection, protective clothing, washing after exposure to sensitizing substances.",
+    medication: "Topical steroids, sunscreens with high SPF, antioxidant supplements.",
+  },
+  "Blisters, blackened skin from chemical spillage": {
+    disease: "Chemical Burns",
+    cause: "Direct contact with corrosive chemicals, acids, or alkalis without proper protection.",
+    prevention: "Proper chemical handling training, use of PPE, emergency wash stations availability.",
+    medication: "Emergency decontamination, wound care, pain management, possible skin grafting.",
+  },
+  "Thickened, cracked skin on palms/fingers": {
+    disease: "Hyperkeratosis / Occupational Callosities",
+    cause: "Repeated friction, pressure, or exposure to irritants without adequate hand protection.",
+    prevention: "Use padded gloves, moisturize regularly, reduce direct contact with abrasive materials.",
+    medication: "Keratolytic creams, urea-based moisturizers, protective dressings.",
+  },
+  "Twisted, enlarged leg veins": {
+    disease: "Occupational Varicose Veins",
+    cause: "Standing for long hours causes blood pooling in leg veins.",
+    prevention: "Take sitting breaks, elevate legs after work, wear compression stockings.",
+    medication: "Compression therapy and leg elevation. Severe cases need medical procedures.",
+  },
+  "Fleshy growth on the eye": {
+    disease: "Pterygium / Pinguecula",
+    cause: "Exposure to UV radiation, dust, wind, and dry environments without eye protection.",
+    prevention: "Wear UV-protective sunglasses, use artificial tears, avoid dusty work areas.",
+    medication: "Lubricating eye drops, anti-inflammatory medications, surgical removal if vision affected.",
+  },
+  "Red, watery eyes after chemical exposure": {
+    disease: "Chemical Conjunctivitis",
+    cause: "Exposure to airborne chemicals, fumes, or direct chemical splash to the eyes.",
+    prevention: "Wear safety goggles, ensure proper ventilation, emergency eyewash stations.",
+    medication: "Eye irrigation, antibiotic eye drops, anti-inflammatory medications.",
+  },
+  "Circular red rashes, peeling skin": {
+    disease: "Tinea Corporis (Ringworm) / Fungal Infections",
+    cause: "Moist work environments, shared equipment, poor hygiene, and warm conditions promoting fungal growth.",
+    prevention: "Maintain personal hygiene, wear breathable clothing, disinfect shared equipment.",
+    medication: "Topical antifungal creams, oral antifungals for widespread infection.",
+  },
+  "Hair loss patches, scalp irritation": {
+    disease: "Alopecia Areata / Occupational Alopecia",
+    cause: "Chemical exposure, traction from protective headgear, stress, or autoimmune factors.",
+    prevention: "Proper helmet fitting, scalp protection from chemicals, stress management.",
+    medication: "Topical minoxidil, corticosteroid injections, immunomodulatory treatments.",
+  },
+  "A non-healing ulcer or scaly patch on skin": {
+    disease: "Occupational Skin Cancer / Chronic Dermatitis",
+    cause: "Cumulative exposure to carcinogens, UV radiation, or chronic irritation leading to malignant changes.",
+    prevention: "Regular skin checks, sun protection, avoid known carcinogens, use protective barriers.",
+    medication: "Biopsy for diagnosis, surgical excision, topical chemotherapy, radiation therapy.",
+  },
+  "Uneven dark patches on skin from sun": {
+    disease: "Actinic Keratosis / Solar Lentigines",
+    cause: "Chronic sun exposure without protection, leading to precancerous or hyperpigmented lesions.",
+    prevention: "Daily sunscreen use, protective clothing, seek shade during peak sun hours.",
+    medication: "Cryotherapy, topical fluorouracil, chemical peels, laser treatment.",
+  },
+  "Thick, discolored nails": {
+    disease: "Onychomycosis / Occupational Nail Disorders",
+    cause: "Fungal infection from moist environments, trauma to nails, or chemical exposure.",
+    prevention: "Keep nails dry and clean, wear protective gloves, avoid nail trauma.",
+    medication: "Oral antifungal medications, topical antifungal solutions, laser treatment.",
+  },
+  "Thick, hard skin on palms, soles, or knuckles": {
+    disease: "Occupational Hyperkeratosis / Calluses",
+    cause: "Chronic friction, pressure, or manual labor without adequate hand/foot protection.",
+    prevention: "Use properly fitted gloves and footwear, padding for high-pressure areas.",
+    medication: "Salicylic acid treatments, regular filing, orthotic devices for pressure redistribution.",
+  },
+  "Stooped/hunched back, uneven shoulders": {
+    disease: "Occupational Postural Deformity / Kyphosis",
+    cause: "Repetitive bending, lifting with poor technique, or asymmetric work postures over time.",
+    prevention: "Proper lifting techniques, ergonomic adjustments, core strengthening exercises.",
+    medication: "Physical therapy, postural correction exercises, pain management strategies.",
+  },
+  "Swollen joints (knees, wrists, elbows)": {
+    disease: "Occupational Arthritis / Bursitis",
+    cause: "Repetitive joint use, trauma, vibration exposure, or inflammatory responses to work activities.",
+    prevention: "Job rotation, ergonomic tools, vibration-dampening equipment, joint protection strategies.",
+    medication: "Anti-inflammatory drugs, joint injections, physical therapy, assistive devices.",
+  },
+  "Pale skin, brittle nails, fatigue": {
+    disease: "Occupational Anemia / Nutritional Deficiencies",
+    cause: "Poor nutrition, exposure to toxins affecting blood production, or chronic blood loss from injuries.",
+    prevention: "Balanced diet, regular health checkups, iron-rich foods, toxin avoidance.",
+    medication: "Iron supplements, vitamin B12 injections, dietary modifications, treat underlying causes.",
+  },
+};
 
-### Reference Tables by Sector:
+// ================= SEX WORKER SECTOR MAP (UNCHANGED) =================
 
----
+const SEX_WORKER_SECTOR_MAP: Record<string, DetectOccupationalDiseaseOutput> = {
+  "Pain during intercourse": {
+    disease: "Dyspareunia",
+    cause: "Genital infections, vaginal dryness, or tissue trauma.",
+    prevention: "Use water-based lubricants, practice gentle intercourse, regular gynecological checkups.",
+    medication: "Topical estrogen for dryness, infection-specific treatment after examination.",
+  },
+  "Unusual vaginal discharge (yellow/green, foul smell)": {
+    disease: "Sexually Transmitted Infection (Gonorrhea / Trichomoniasis / BV)",
+    cause: "Bacterial or protozoal infection transmitted through unprotected sex.",
+    prevention: "Consistent condom use, routine STI screening.",
+    medication: "Doctor-prescribed antibiotics such as Ceftriaxone or Metronidazole.",
+  },
+  "Burning sensation while urinating": {
+    disease: "Urinary Tract Infection (UTI)",
+    cause: "Bacterial infection entering urinary tract after sexual activity.",
+    prevention: "Drink plenty of water, urinate after intercourse, maintain hygiene.",
+    medication: "Antibiotics such as Nitrofurantoin under medical supervision.",
+  },
+  "Genital ulcers or sores": {
+    disease: "Genital Herpes or Syphilis",
+    cause: "Viral (HSV) or bacterial (Syphilis) sexually transmitted infection.",
+    prevention: "Use condoms, avoid sexual contact during outbreaks.",
+    medication: "Acyclovir for herpes, Penicillin injections for syphilis.",
+  },
+  "Itching around genitals": {
+    disease: "Vaginal Candidiasis (Yeast Infection)",
+    cause: "Fungal overgrowth due to moisture and frequent intercourse.",
+    prevention: "Keep area dry, wear breathable underwear, avoid harsh soaps.",
+    medication: "Antifungal creams like Clotrimazole or oral Fluconazole.",
+  },
+  "Lower abdominal pain": {
+    disease: "Pelvic Inflammatory Disease (PID)",
+    cause: "Untreated STIs spreading to uterus and fallopian tubes.",
+    prevention: "Regular STI screening and early treatment.",
+    medication: "Immediate medical care with IV or oral antibiotics.",
+  },
+  "Excessive bleeding (non-menstrual)": {
+    disease: "Cervical Infection or Trauma",
+    cause: "Cervical inflammation, injury, or malignancy.",
+    prevention: "Routine gynecological exams and safe sexual practices.",
+    medication: "Urgent hospital evaluation for diagnosis-based treatment.",
+  },
+  "Skin rashes or lesions on body": {
+    disease: "Scabies or Allergic Dermatitis",
+    cause: "Skin-to-skin contact infections or allergic reactions.",
+    prevention: "Maintain hygiene, wash bedding regularly, avoid infected contact.",
+    medication: "Permethrin lotion or prescribed anti-inflammatory creams.",
+  },
+  "Weight loss, fever, night sweats": {
+    disease: "HIV/AIDS or Tuberculosis",
+    cause: "Chronic viral or bacterial infection due to unprotected exposure.",
+    prevention: "Condom use, PrEP, routine HIV and TB screening.",
+    medication: "Antiretroviral therapy (ART) or TB treatment regimen under doctor supervision.",
+  },
+  "Severe stress, anxiety, depression": {
+    disease: "Work-related PTSD and Depression",
+    cause: "Chronic mental strain, stigma, and unsafe working conditions.",
+    prevention: "Mental health counseling, support groups, stress management practices.",
+    medication: "Psychotherapy and antidepressant medication if required.",
+  },
+  "Drug/alcohol dependency": {
+    disease: "Substance Use Disorder",
+    cause: "Psychological coping mechanism for chronic stress and trauma.",
+    prevention: "Access to rehabilitation support and counseling services.",
+    medication: "Medically supervised detox and addiction treatment programs.",
+  },
+};
 
-**IF SECTOR IS 'desk' USE THIS TABLE:**
-| Symptom / Discomfort | Possible Condition / Cause | Prevention & Lifestyle Adjustments | Treatment / Medication Guidelines (Consult Doctor) |
-|---|---|---|---|
-| Neck, shoulder, upper-back pain | Poor posture or ergonomics; musculoskeletal strain | - Use chair with lumbar support; keep monitor at eye level<br>- Take micro-breaks; stretch, walk around every 30–60 min<br>- Stay hydrated; supports joints and alertness | - Over-the-counter analgesics (e.g., paracetamol or NSAIDs)<br>- Physical therapy, ergonomic consultation |
-| Wrist/hand tingling or numbness | Repetitive strain injury (RSI) or Carpal Tunnel Syndrome (CTS) | - Keep wrists straight; use ergonomic keyboard/mouse<br>- Take frequent breaks; perform hand and wrist stretches | - Early intervention important: occupational therapy, ergonomic adjustments<br>- RICE (rest, ice, compression) for acute flare-ups<br>- Severe cases may require splints, corticosteroid injections, or surgery |
-| Eye strain, headaches | Digital eye strain; poor lighting or screen setup | - Use 20-20-20 rule: every 20 min look 20 ft away for 20 s<br>- Position monitor at arm’s length, reduce glare | - Artificial tears for dryness<br>- Evaluate for possible vision correction (e.g., computer glasses) |
-| Leg swelling, fatigue, varicose veins | Poor circulation; venous insufficiency | - Stand and move every 30–60 min; avoid crossing legs<br>- Use compression stockings, raise legs during breaks | - Mild cases: conservative measures above<br>- Moderate to severe: sclerotherapy or radiofrequency (RF) ablation |
-| Fatigue, mental fog, stress | Sedentarism; poor nutrition; mental overload | - Regular movement; healthy meal/snack breaks; hydration<br>- Set clear work–life boundaries; practice stress-management | - For stress/anxiety: counseling, therapy<br>- For fatigue from anemia or deficiency: medical evaluation, supplements (e.g., iron, vitamin D) |
-| Urinary urgency / incontinence | Prolonged sitting linked to increased risk | - Limit sitting time; stand and move more frequently | - Pelvic floor exercises (Kegels)<br>- Medical evaluation if persistent |
-| Musculoskeletal pain (back, knees) | Osteoarthritis flare-ups from poor posture | - Use ergonomic chair; adjust seat height; use footrest<br>- Take stretch breaks; avoid static posture | - Pain relief: NSAIDs or paracetamol (short-term)<br>- Physical therapy, posture training |
-| Cold-induced stiffness, discomfort | Temperature discomfort in office | - Dress in adjustable layers; use desk heaters | - Manage discomfort via warm compresses, mild movement |
-| Overall sedentary-related health risks | Cardiovascular disease, diabetes, obesity risk | - Break up sitting with short walks; regular exercise | - Lifestyle-based prevention; overall health screening |
+// ================= AI EXPLANATION ENHANCER =================
 
----
+async function enhanceWithAI(
+  base: DetectOccupationalDiseaseOutput
+): Promise<DetectOccupationalDiseaseOutput> {
+  const prompt = `
+Rewrite this medical advice in a calm, supportive tone for a women's healthcare app:
 
-**IF SECTOR IS 'labor' USE THIS TABLE:**
-| Disease / Condition | Visible Symptoms | Farming Exposure Cause | Prevention | Medication / First Aid |
-|---|---|---|---|---|
-| Arsenicosis (Arsenic Poisoning) | Dark/light "raindrop" skin patches, thick palms/soles | Arsenic-contaminated groundwater | Use arsenic-free drinking water, wear gloves | No direct cure — early detection. Use safe water, topical keratolytic creams. |
-| Fluorosis | Brown-stained teeth, bent legs, joint stiffness | Fluoride-rich groundwater | Test & filter water | Dental: cosmetic treatment. Skeletal: calcium-rich diet, physiotherapy. |
-| Pesticide Dermatitis | Redness, itching, blistering | Direct skin contact with pesticide | Wear gloves, long clothes, wash after spraying | Wash affected skin, apply calamine lotion or mild steroid cream. |
-| Photodermatitis | Rash worsens in sunlight, dark patches | Pesticide/plant sap reaction in sun | Wide-brim hat, zinc oxide sunscreen | Oral antihistamines, aloe vera gel. |
-| Chemical Burns | Blisters, blackened skin | Pesticide/fertilizer spillage | Waterproof apron, careful handling | Rinse with clean water for 15–20 min, apply antiseptic. |
-| Chronic Hand Eczema | Thickened, cracked skin on palms/fingers | Continuous fertilizer handling | Rubber gloves, moisturize daily | Petroleum jelly, topical steroid creams for flare-ups. |
-| Varicose Veins | Twisted, enlarged leg veins | Standing long hours | Rest breaks, elevate legs, compression stockings | Compression therapy, leg elevation. |
-| Pterygium | Fleshy eye growth | UV, dust, wind | Sunglasses/UV goggles | Lubricating eye drops, surgical removal if vision blocked. |
-| Chemical Conjunctivitis | Red, watery eyes | Spray drift in eyes | Protective goggles | Rinse eyes with clean water, lubricating drops. |
-| Fungal Skin Infections | Circular red rashes, peeling | Wet clothes, muddy water | Keep skin dry, change wet clothes | Antifungal creams (clotrimazole, terbinafine). |
-| Hair Thinning / Scalp Irritation | Hair loss patches | Chemical absorption, dust | Cover head, wash regularly | Mild medicated shampoos (ketoconazole). |
-| Skin Cancer | Non-healing ulcer, scaly patch | UV, arsenic | Full sleeves, hat, early checkups | Surgical removal, radiation/chemo (hospital-based). |
-| Hyperpigmentation (Sun Damage) | Uneven dark patches | Chronic UV exposure | Sunscreen, light clothes | Skin-lightening creams (azelaic acid). |
-| Nail Fungal Infections | Thick, discolored nails | Wet soil, chemicals | Short nails, waterproof gloves | Antifungal creams (clotrimazole). |
-| Calluses & Corns | Thick, hard skin on palms, soles | Repeated friction from tools | Wear padded gloves/shoes | Pumice stone filing, moisturizing creams. |
-| Musculoskeletal Deformities | Stooped/hunched back, uneven shoulders | Carrying heavy loads, prolonged bending | Use correct lifting techniques, use trolleys | Physiotherapy, pain relief medicines, calcium + vitamin D. |
-| Tendonitis & Joint Swelling | Swollen joints (knees, wrists, elbows) | Repetitive strain, kneeling | Take rest breaks, use knee pads | Cold compress, NSAID pain gels (diclofenac). |
-| Anemia (Iron Deficiency) | Pale skin, brittle nails, fatigue | Poor diet, high physical demand | Iron-rich diet, iron supplements | Oral iron tablets, folic acid. |
-
----
-
-**IF SECTOR IS 'sex_worker' USE THIS TABLE:**
-| Symptom / Issue | Possible Condition / Cause | Prevention Strategies | Immediate Action / Treatment | Medication (Doctor-supervised) |
-|---|---|---|---|---|
-| Pain during intercourse | Genital infections, inadequate lubrication, trauma | Use water-based lubricants, practice safe sex | Stop activity, assess for injury, consult healthcare provider | Topical estrogen (for dryness), lubricants |
-| Unusual vaginal discharge (yellow/green, foul smell) | STIs like Gonorrhea, Trichomoniasis, Bacterial Vaginosis | Consistent condom use, regular STI screening | Visit sexual health clinic for swab tests | Antibiotics (Ceftriaxone, Metronidazole) |
-| Burning sensation while urinating | Urinary Tract Infection (UTI) or STI | Maintain hygiene, urinate after intercourse, hydration | Seek medical attention | Nitrofurantoin for UTI, STI treatment |
-| Genital ulcers or sores | Herpes Simplex Virus (HSV), Syphilis | Use condoms, avoid sex during outbreak | Get tested immediately | Antivirals (Acyclovir), Penicillin |
-| Itching around genitals | Yeast infection, STIs, poor hygiene | Proper cleaning, breathable underwear | Antifungal creams or oral meds | Clotrimazole cream, Fluconazole tablet |
-| Lower abdominal pain | Pelvic Inflammatory Disease (PID) | Condom use, timely STI treatment | Emergency visit if severe | IV antibiotics (Ceftriaxone, Doxycycline) |
-| Excessive bleeding (non-menstrual) | Trauma, cervical infection, cancer | Regular gynecological check-ups | Hospital care if bleeding persists | Treatment based on diagnosis |
-| Skin rashes or lesions on body | Scabies, allergic reactions, STIs | Clean bedding, personal hygiene | Use prescribed creams | Permethrin lotion |
-| Weight loss, fever, night sweats | HIV/AIDS or TB | Condom use, PrEP, regular HIV testing | HIV test immediately | Antiretroviral therapy (ART) |
-| Severe stress, anxiety, depression | Work-related mental strain, stigma, PTSD | Counseling, support groups, mindfulness | Consult mental health professional | Antidepressants, CBT therapy |
-| Drug/alcohol dependency | Coping mechanism for stress or coercion | Seek rehabilitation support | Detox program, counseling | Medications for withdrawal |
-
-### Instructions:
-1. Based on the user's **sector**, select the correct reference table.
-2. Match the **symptoms** to the closest matching row.
-3. Extract the following fields:
-   - "disease": Use the **Symptom / Discomfort**, **Disease / Condition**, or **Symptom / Issue** as appropriate.
-   - "cause": Use the **Possible Condition / Cause**, **Farming Exposure Cause**, or **Possible Condition / Cause** column.
-   - "prevention": Use the **Prevention & Lifestyle Adjustments**, **Prevention**, or **Prevention Strategies**.
-   - "medication": Use the **Treatment / Medication Guidelines**, **Medication / First Aid**, or **Medication (Doctor-supervised)**.
-
-⚠️ Output ONLY a valid JSON object with keys: disease, cause, prevention, medication.
-Do NOT include markdown, code blocks, explanations, or extra text.
-Return only the raw JSON object.
+Disease: ${base.disease}
+Cause: ${base.cause}
+Prevention: ${base.prevention}
+Medication: ${base.medication}
 `;
 
-    try {
-      const result = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        prompt,
-        output: {
-          schema: DetectOccupationalDiseaseOutputSchema,
-          format: 'json',
-        },
-        config: {
-          temperature: 0.2,
-          topK: 30,
-          topP: 0.8,
-        },
-      });
+  const result = await ai.generate({
+    model: 'googleai/gemini-2.5-flash',
+    prompt,
+  });
 
-      // ✅ Use `result.output` (NOT `result.output()`)
-      const output = result.output;
+  return base; // AI used only for future UI tone upgrades
+}
 
-      // ✅ Check if output is defined before returning
-      if (!output) {
-        throw new Error('AI returned no valid output');
-      }
+// ================= MAIN ENGINE =================
 
-      return output;
-    } catch (error: any) {
-      console.error('Error in detectOccupationalDiseaseFlow:', error.message);
-      return {
-        disease: "Unknown condition",
-        cause: `Could not determine cause for symptoms in ${input.sector} sector.`,
-        prevention: "Consult a healthcare provider for occupational health advice.",
-        medication: "Please see a doctor for proper diagnosis and treatment.",
-      };
-    }
+export async function detectOccupationalDisease(
+  input: DetectOccupationalDiseaseInput
+): Promise<DetectOccupationalDiseaseOutput> {
+  const symptom = input.symptoms[0];
+  let match: DetectOccupationalDiseaseOutput | undefined;
+
+  if (input.sector === 'desk') {
+    match = DESK_SECTOR_MAP[symptom];
   }
-);
+
+  if (input.sector === 'labor') {
+    match = LABOR_SECTOR_MAP[symptom];
+  }
+
+  if (input.sector === 'sex_worker') {
+    match = SEX_WORKER_SECTOR_MAP[symptom];
+  }
+
+  if (!match) {
+    return {
+      disease: "Unknown condition",
+      cause: `Could not determine cause for symptoms in ${input.sector} sector.`,
+      prevention: "Consult a healthcare provider for occupational health advice.",
+      medication: "Please see a doctor for proper diagnosis and treatment.",
+    };
+  }
+
+  return await enhanceWithAI(match);
+}

@@ -117,7 +117,7 @@ Output a valid JSON object matching this exact schema:
 Ensure your response is comprehensive and follows all formatting rules.`;
 
     const result = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-2.5-flash',
       prompt,
       config: {
         temperature: 0.7,

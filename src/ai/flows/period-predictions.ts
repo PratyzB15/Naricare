@@ -1,108 +1,127 @@
-'use server';
-
-/**
- * @fileOverview Predicts the start date of the next period by analyzing past cycle data and considering mood, symptoms, age, and medical history.
- *
- * - predictPeriod - Main function to trigger prediction
- * - PredictPeriodInput - Input schema
- * - PredictPeriodOutput - Output schema with predicted date, confidence, reasoning, health analysis, and flow
- */
-
-import { ai } from '@/ai/genkit';
+import { ai } from '../genkit';
 import { z } from 'genkit';
 
-// === Input Schema ===
-const PredictPeriodInputSchema = z.object({
-  pastCycleData: z
-    .array(
-      z.object({
-        start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be ISO date string (YYYY-MM-DD)'),
-        end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be ISO date string (YYYY-MM-DD)'),
-      })
-    )
-    .min(1, 'At least one past cycle is required')
-    .describe('Array of past period start and end dates in ISO format.'),
-  mood: z.string().describe('User’s current mood.'),
-  physicalSymptoms: z.string().describe('User’s current physical symptoms.'),
-  age: z.number().optional().describe('User’s age.'),
-  medicalHistory: z.string().optional().describe('Pre-existing conditions like PCOS, Thyroid, etc.'),
+// === Blood Color Types ===
+export const BloodColorSchema = z.enum([
+  'Bright Red',
+  'Dark Red/Brown',
+  'Black',
+  'Pink',
+  'Orange',
+  'Gray',
+  'Not Applicable'
+]);
+
+// === Input Schema with Blood Color ===
+export const PredictPeriodInputSchema = z.object({
+  pastCycleData: z.array(
+    z.object({
+      start: z.string(),
+      end: z.string(),
+    })
+  ).min(1),
+  mood: z.string().optional().default(''),
+  physicalSymptoms: z.string().optional().default(''),
+  bloodColor: BloodColorSchema.optional(),  // ⬅️ NEW FIELD
+  age: z.number().optional(),
+  medicalHistory: z.string().optional(),
+  periodOccurred: z.boolean().optional(),
+  flowFeedback: z.string().optional(),
 });
+
 export type PredictPeriodInput = z.infer<typeof PredictPeriodInputSchema>;
 
-// === Output Schema ===
-const PredictPeriodOutputSchema = z.object({
-  predictedStartDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be valid ISO date string (YYYY-MM-DD)')
-    .describe('Predicted start date of next period.'),
-  confidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe('Confidence score between 0 and 1 based on cycle regularity.'),
-  reasoning: z.string().describe('Explanation of prediction logic.'),
-  healthAnalysis: z.string().optional().describe('Analysis of menstrual health including PCOS, menopause, irregularities.'),
-  flowPrediction: z.string().optional().describe('Day-by-day flow intensity, e.g., "Day 1: Medium, Day 2: Heavy..."'),
+// === Output Schema with Blood Analysis ===
+export const PredictPeriodOutputSchema = z.object({
+  predictedStartDate: z.string(),
+  confidence: z.number(),
+  reasoning: z.string(),
+  healthAnalysis: z.string().optional(),
+  flowPrediction: z.string().optional(),
+  bloodColorAnalysis: z.string().optional(),  // ⬅️ NEW FIELD
+  recommendations: z.array(z.string()).optional(),
+  cyclePhase: z.string().optional(),
+  phaseDescription: z.string().optional(),
+  phaseSymptoms: z.string().optional(),
+  emotionalState: z.string().optional(),
 });
+
 export type PredictPeriodOutput = z.infer<typeof PredictPeriodOutputSchema>;
 
-// === Define Prompt with Handlebars Syntax ===
+// === AI Prompt with Blood Color Analysis ===
 const predictPeriodPrompt = ai.definePrompt({
   name: 'predictPeriodPrompt',
   input: { schema: PredictPeriodInputSchema },
   output: { schema: PredictPeriodOutputSchema },
-  prompt: `You are an AI women's health expert specializing in menstrual cycle prediction and analysis.
+  prompt: `You are an AI women's health expert for NariCare.
 
 **User Information:**
-- Age: {{{age}}}
-- Medical History: {{{medicalHistory}}}
-- Past Cycle Data: {{#each pastCycleData}}Start: {{start}}, End: {{end}}; {{/each}}
-- Current Mood: {{mood}}
-- Current Physical Symptoms: {{physicalSymptoms}}
+- Past Cycles: {{#each pastCycleData}}Start: {{start}}, End: {{end}}; {{/each}}
+- Mood: {{mood}}
+- Symptoms: {{physicalSymptoms}}
+- Blood Color: {{bloodColor}}  ⬅️ NEW
+- Period Occurred: {{periodOccurred}}
 
-**Your Tasks:**
+**Tasks:**
+1. Predict next period date (YYYY-MM-DD)
+2. Blood color analysis (important!) ⬅️ NEW
+3. Health recommendations
+4. Current cycle phase
 
-1. **Predict Next Period Start Date**
-   - Calculate the average cycle length (in days) from the provided pastCycleData. A cycle is the number of days between the start of one period and the next.
-   - Use this average to predict the **predictedStartDate** by adding it to the most recent period's start date.
-   - Return the date in strict ISO format: YYYY-MM-DD.
-   - Assign a **confidence** score (0–1):
-     - 0.9–1.0: Cycles very regular (±1–2 days)
-     - 0.7–0.8: Slight variation (±3–4 days)
-     - 0.5–0.6: Moderately irregular
-     - <0.5: Highly irregular or insufficient data
-   - Provide **reasoning** explaining the average and confidence.
+**Blood Color Guide:**
+- Bright Red: Normal fresh flow
+- Dark Red/Brown: Normal, older blood
+- Black: Oxidized, may be leftover
+- Pink: Low estrogen/anemia possible
+- Orange: Possible infection
+- Gray: Urgent - possible infection/miscarriage
+- Not Applicable: No current period
 
-2. **Analyze Menstrual Health (healthAnalysis)**
-   - **Regularity**: Normal cycle length is 21–35 days. Flag if cycles are consistently shorter, longer, or vary by more than 5 days.
-   - **PCOS/PCOD Risk**: If cycles are frequently >35 days, highly irregular, or skipped — especially if medical history mentions PCOS — indicate possible PCOS. Suggest consulting a doctor.
-   - **Perimenopause/Menopause**: If age ≥ 45 and cycles are becoming irregular or longer, mention perimenopause as a likely factor.
-   - **Thyroid & Other Factors**: Note that thyroid disorders, stress, or extreme mood changes can disrupt cycles.
-   - Always personalize advice using age and medical history.
-
-3. **Predict Flow Intensity (flowPrediction)**
-   - Provide a day-by-day prediction of flow for the upcoming period.
-   - Format: "Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light"
-   - Adjust based on symptoms:
-     - Fatigue, cramps → heavier flow
-     - Low energy, spotting → lighter flow
-     - Mood swings → possible hormonal fluctuations
-
-**Output Format**
-Return ONLY a valid JSON object with these keys:
+Return ONLY JSON with these keys:
 {
   "predictedStartDate": "YYYY-MM-DD",
   "confidence": 0.8,
   "reasoning": "...",
   "healthAnalysis": "...",
-  "flowPrediction": "Day 1: Medium, Day 2: Heavy, ..."
+  "flowPrediction": "Day 1: Medium...",
+  "bloodColorAnalysis": "...",  ⬅️ NEW
+  "recommendations": ["..."],
+  "cyclePhase": "...",
+  "phaseDescription": "...",
+  "phaseSymptoms": "...",
+  "emotionalState": "..."
 }
-⚠️ DO NOT include markdown, explanations, or code blocks. Return only raw JSON.
 `,
 });
 
+// === Helper: Blood Color Fallback Analysis ===
+function getBloodColorAnalysis(color: string): string {
+  const analysisMap: Record<string, string> = {
+    'Bright Red': 'Normal fresh menstrual flow. Indicates active menstruation.',
+    'Dark Red/Brown': 'Older blood, normal at beginning or end of period.',
+    'Black': 'Very old, oxidized blood. May be leftover from previous cycle.',
+    'Pink': 'May indicate low estrogen levels or anemia. Consider nutritional evaluation.',
+    'Orange': 'Could suggest possible infection. Monitor for other symptoms.',
+    'Gray': 'Potential infection or other concerns. Seek medical attention.',
+    'Not Applicable': 'No current menstrual flow to analyze.'
+  };
+  return analysisMap[color] || '';
+}
+
+// === Helper: Calculate Average Cycle ===
+function calculateAverageCycle(cycles: { start: string }[]): number {
+  if (cycles.length < 2) return 28;
+  const diffs = cycles.slice(1).map((cycle, i) => {
+    const prev = new Date(cycles[i].start);
+    const curr = new Date(cycle.start);
+    return Math.floor((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
+  });
+  const sum = diffs.reduce((a, b) => a + b, 0);
+  return Math.round(sum / diffs.length);
+}
+
 // === Main Flow ===
-const predictPeriodFlow = ai.defineFlow(
+export const predictPeriodFlow = ai.defineFlow(
   {
     name: 'predictPeriodFlow',
     inputSchema: PredictPeriodInputSchema,
@@ -112,51 +131,37 @@ const predictPeriodFlow = ai.defineFlow(
     try {
       const result = await predictPeriodPrompt(input);
       const output = result.output;
-
-      if (!output) throw new Error('AI returned no output');
-
-      // Validate date format
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(output.predictedStartDate)) {
-        throw new Error('Invalid predictedStartDate format');
-      }
-
+      
+      if (!output) throw new Error('No AI output');
+      
       return output;
-    } catch (error: any) {
-      console.error('AI prediction failed:', error.message);
+    } catch (error) {
+      console.error('AI prediction failed:', error);
+      
       // Fallback logic
       const lastStart = new Date(input.pastCycleData[input.pastCycleData.length - 1].start);
-      const avgLength = _calculateAverageCycleLength(input.pastCycleData);
+      const avgLength = calculateAverageCycle(input.pastCycleData);
       const predictedDate = new Date(lastStart);
       predictedDate.setDate(predictedDate.getDate() + avgLength);
-      const predictedStartDate = predictedDate.toISOString().split('T')[0];
-
+      
       return {
-        predictedStartDate,
+        predictedStartDate: predictedDate.toISOString().split('T')[0],
         confidence: 0.5,
-        reasoning: 'Fallback: Used average cycle length due to AI error.',
-        healthAnalysis:
-          'Could not perform full health analysis. Ensure at least 3–6 cycles are logged for accurate insights. Consult a healthcare provider for concerns about PCOS, menopause, or irregular cycles.',
+        reasoning: 'Used average cycle length as fallback.',
+        healthAnalysis: 'Consult healthcare provider for personalized advice.',
         flowPrediction: 'Day 1: Medium, Day 2: Heavy, Day 3: Heavy, Day 4: Medium, Day 5: Light',
+        bloodColorAnalysis: input.bloodColor ? getBloodColorAnalysis(input.bloodColor) : '',
+        recommendations: ['Track 3-6 cycles for accuracy', 'Consult doctor for concerns'],
+        cyclePhase: 'Follicular Phase',
+        phaseDescription: 'Uterine lining thickens preparing for potential pregnancy.',
+        phaseSymptoms: 'Increased energy, clear-mindedness',
+        emotionalState: 'Optimism, sociability, happiness'
       };
     }
   }
 );
 
-// === Exported Function ===
+// === Server Action Export ===
 export async function predictPeriod(input: PredictPeriodInput): Promise<PredictPeriodOutput> {
   return await predictPeriodFlow(input);
-}
-
-// === Helper: Calculate Average Cycle Length ===
-function _calculateAverageCycleLength(cycles: { start: string }[]): number {
-  if (cycles.length < 2) return 28;
-
-  const diffs = cycles.slice(1).map((cycle, i) => {
-    const prev = new Date(cycles[i].start);
-    const curr = new Date(cycle.start);
-    return Math.floor((curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24));
-  });
-
-  const sum = diffs.reduce((a, b) => a + b, 0);
-  return Math.round(sum / diffs.length);
 }
