@@ -4,19 +4,20 @@
 
 @layer base {
   :root {
+    /* ✅ Light Mode (from global2.css) */
     --background: 0 0% 100%;
     --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
     --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 333 91% 48%; /* Brighter Pink */
+    --primary: 333 91% 48%; /* Bright Pink */
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 270 50% 96%; /* Soft Lavender */
     --secondary-foreground: 270 20% 30%;
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
-    --accent: 300 100% 97%; /* Lighter purple/pink */
+    --accent: 300 100% 97%; /* Light Purple/Pink */
     --accent-foreground: 300 40% 30%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -31,27 +32,28 @@
     --radius: 0.8rem;
   }
 
+  /* ✨ Dark Mode: Fully replaced with global1.css's rich animated theme */
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
+    --background: 260 20% 5%;
+    --foreground: 0 0% 98%;
+    --card: 270 15% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 270 20% 8%;
+    --popover-foreground: 0 0% 98%;
     --primary: 333 91% 68%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --primary-foreground: 333 30% 10%;
+    --secondary: 300 30% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 270 15% 25%;
+    --muted-foreground: 270 10% 65%;
+    --accent: 300 50% 40%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 333 81% 68%;
-    --chart-1: 330 60% 50%;
+    --border: 270 15% 30%;
+    --input: 270 15% 20%;
+    --ring: 333 91% 68%;
+    --chart-1: 330 70% 50%;
     --chart-2: 300 70% 50%;
     --chart-3: 270 60% 55%;
     --chart-4: 310 60% 50%;
@@ -59,11 +61,56 @@
   }
 }
 
+/* 🎨 Base Styles */
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
   }
+
+  /* ✨ Animated Gradient Background in Dark Mode */
+  .dark body {
+    background: linear-gradient(-45deg, 
+      hsl(260 20% 5%), 
+      hsl(300 30% 10%), 
+      hsl(333 40% 15%), 
+      hsl(260 20% 5%)
+    );
+    background-size: 400% 400%;
+    animation: animated-gradient 15s ease infinite;
+    background-attachment: fixed;
+  }
+}
+
+/* 🌀 Keyframes for Animation */
+@keyframes animated-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Optional: Animated border angle (for future use with conic gradients) */
+@keyframes animated-border {
+  0% {
+    --angle: 0deg;
+  }
+  100% {
+    --angle: 360deg;
+  }
+}
+
+/* Define custom property for animation (supports Houdini API) */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }

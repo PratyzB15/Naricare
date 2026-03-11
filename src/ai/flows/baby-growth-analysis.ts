@@ -8,7 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'genkit'; 
 
 const BabyGrowthAnalysisInputSchema = z.object({
   ageInMonths: z
@@ -117,7 +117,27 @@ const babyGrowthAnalysisFlow = ai.defineFlow(
     outputSchema: BabyGrowthAnalysisOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    try {
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error('AI returned no valid output');
+      }
+      return output;
+    } catch (error) {
+      // Fallback response if prompt fails
+      return {
+        analysis: `**Growth Parameters:**
+- No growth data provided for analysis.
+**Developmental Milestones:**
+- At ${input.ageInMonths} months, babies typically show signs of improved motor control and social interaction.
+**Potential Health Concerns:**
+- Common colds and diaper rash are frequent at this age.
+- Keep baby hydrated and clean to prevent infections.
+**General Recommendations:**
+- Continue regular check-ups with a pediatrician.
+- Encourage tummy time and safe exploration.
+- Ensure proper nutrition and sleep patterns.`
+      };
+    }
   }
 );

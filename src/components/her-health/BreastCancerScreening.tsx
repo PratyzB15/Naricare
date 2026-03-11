@@ -157,6 +157,7 @@ export function BreastCancerScreening() {
             <TabsTrigger value="breast"><Ribbon className="mr-2 h-4 w-4"/>Breast Cancer</TabsTrigger>
             <TabsTrigger value="ovarian"><ClipboardCheck className="mr-2 h-4 w-4"/>Ovarian Cancer</TabsTrigger>
         </TabsList>
+
         <TabsContent value="breast">
              <div className="grid md:grid-cols-2 gap-8 mt-4">
                 <Card>
@@ -190,8 +191,39 @@ export function BreastCancerScreening() {
                             </li>
                         </ol>
                     </CardContent>
+
+                    {/* === VIDEO UNDER "HOW TO PERFORM A SELF-EXAM" === */}
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle>Video Guide: How to Do a Breast Self-Exam</CardTitle>
+                            <CardDescription>
+                                Watch this step-by-step demonstration to learn proper technique.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="aspect-video rounded-lg overflow-hidden border">
+                                <video
+                                    controls
+                                    className="w-full h-full object-cover"
+                                    poster="/videos/breast-self-exam-poster.jpg"
+                                    src="/videos/breast-self-exam.mp4"
+                                    track={{
+                                        kind: 'subtitles',
+                                        src: '/videos/breast-self-exam.hindi.vtt',
+                                        srclang: 'hi',
+                                        label: 'Hindi',
+                                        default: true,
+                                    }}
+                                >
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </Card>
+
                 <div>
+                    {/* === Existing Form === */}
                     <Card>
                         <Form {...breastForm}>
                             <form onSubmit={breastForm.handleSubmit(onBreastSubmit)}>
@@ -260,7 +292,6 @@ export function BreastCancerScreening() {
                                 </div>
                                 )}
 
-
                             </CardContent>
                             <CardFooter className="flex justify-end">
                                 <Button type="submit" disabled={isPending}>
@@ -271,6 +302,7 @@ export function BreastCancerScreening() {
                             </form>
                         </Form>
                     </Card>
+
                      {breastResult && (
                         <Card className="mt-8">
                         <CardHeader>
@@ -298,6 +330,7 @@ export function BreastCancerScreening() {
                 </div>
             </div>
         </TabsContent>
+
         <TabsContent value="ovarian">
             <Card className="mt-4">
                 <CardHeader>

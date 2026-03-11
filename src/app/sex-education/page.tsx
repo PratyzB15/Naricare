@@ -6,15 +6,14 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import Image from 'next/image';
 import { BookOpen, Heart, Shield, Droplets } from 'lucide-react';
 
 const sections = [
   {
     value: 'item-1',
-    title: 'Understanding Your Body',
+    title: 'Understanding Your Female Body',
     icon: Heart,
-    image: 'https://storage.googleapis.com/gemini-studio-assets/project-images/7a68a5c3-8a2b-4654-a957-61c0c325e683.png',
+    video: '/videos/understand-body.mp4',
     dataAiHint: 'female anatomy',
     content: (
       <>
@@ -36,7 +35,7 @@ const sections = [
     value: 'item-2',
     title: 'How Menstruation Happens (The Menstrual Cycle)',
     icon: Droplets,
-    image: 'https://placehold.co/600x400.png',
+    videosStacked: ['/videos/menstruation.mp4', '/videos/phases-menstruation.mp4'],
     dataAiHint: 'menstrual cycle diagram',
     content: (
       <>
@@ -66,6 +65,7 @@ const sections = [
     value: 'item-3',
     title: 'Consent & Boundaries',
     icon: Shield,
+    video: '/videos/consent.mp4',
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -74,12 +74,13 @@ const sections = [
           <li>No one should ever pressure, guilt-trip, or force you into any sexual act. Your boundaries are valid and must be respected.</li>
         </ul>
       </>
-    )
+    ),
   },
-    {
+  {
     value: 'item-4',
     title: 'Sexual & Reproductive Health',
     icon: Heart,
+    video: '/videos/contraceptive.mp4',
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -90,10 +91,11 @@ const sections = [
       </>
     )
   },
-   {
+  {
     value: 'item-5',
     title: 'Pregnancy Awareness',
     icon: Shield,
+    videosSideBySide: ['/videos/Pregnancy-awareness.mp4', '/videos/best-ovulation.mp4'],
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -104,10 +106,11 @@ const sections = [
       </>
     )
   },
-   {
+  {
     value: 'item-6',
     title: 'Sexual Comfort & Pleasure',
     icon: Heart,
+    video: '/videos/Pain-in-sex.mp4',
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -118,10 +121,11 @@ const sections = [
       </>
     )
   },
-   {
+  {
     value: 'item-7',
     title: 'Emotional & Mental Well-being',
     icon: Shield,
+    video: '/videos/mental-health.mp4',
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -131,10 +135,11 @@ const sections = [
       </>
     )
   },
-   {
+  {
     value: 'item-8',
     title: 'Hygiene & Safety',
     icon: Heart,
+    video: '/videos/Hygiene.mp4',
     content: (
       <>
         <ul className="list-disc pl-5 space-y-2">
@@ -172,21 +177,59 @@ export default function SexEducationPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="prose prose-sm max-w-none grid md:grid-cols-2 gap-8 items-center">
+                    <div className="prose prose-sm max-w-none grid md:grid-cols-2 gap-8 items-start">
                         <div>
                              {section.content}
                         </div>
-                        {section.image && (
-                           <div className="relative aspect-video">
-                                <Image
-                                    src={section.image}
-                                    alt={section.title}
-                                    fill
-                                    className="rounded-lg object-contain"
-                                    data-ai-hint={section.dataAiHint}
-                                />
-                           </div>
-                        )}
+                        <div className="space-y-4">
+                            {/* Single Video */}
+                            {section.video && (
+                                <div className="aspect-video rounded-lg overflow-hidden border">
+                                    <video
+                                        controls
+                                        className="w-full h-full object-cover"
+                                        src={section.video}
+                                        poster="/videos/video-placeholder.jpg"
+                                    >
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            )}
+                            {/* Stacked Videos (e.g., Menstruation) */}
+                            {section.videosStacked && (
+                                <div className="space-y-4">
+                                    {section.videosStacked.map((src, i) => (
+                                        <div key={i} className="aspect-video rounded-lg overflow-hidden border">
+                                            <video
+                                                controls
+                                                className="w-full h-full object-cover"
+                                                src={src}
+                                                poster="/videos/video-placeholder.jpg"
+                                            >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {/* Side-by-Side Videos (e.g., Pregnancy) */}
+                            {section.videosSideBySide && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {section.videosSideBySide.map((src, i) => (
+                                        <div key={i} className="aspect-video rounded-lg overflow-hidden border">
+                                            <video
+                                                controls
+                                                className="w-full h-full object-cover"
+                                                src={src}
+                                                poster="/videos/video-placeholder.jpg"
+                                            >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

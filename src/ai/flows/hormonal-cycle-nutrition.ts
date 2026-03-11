@@ -6,9 +6,9 @@
  * - HormonalCycleNutritionInput - The input type for the getHormonalCycleNutrition function.
  * - HormonalCycleNutritionOutput - The return type for the getHormonalCycleNutrition function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+ 
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const HormonalCycleNutritionInputSchema = z.object({
   cyclePhase: z
@@ -48,68 +48,96 @@ export async function getHormonalCycleNutrition(
   return hormonalCycleNutritionFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'hormonalCycleNutritionPrompt',
-  input: {schema: HormonalCycleNutritionInputSchema},
-  output: {schema: HormonalCycleNutritionOutputSchema},
-  prompt: `You are an expert nutritionist specializing in women's hormonal health, pregnancy, and postpartum recovery.
-
-**IMPORTANT FORMATTING RULES:**
-- All section headings MUST be bolded by enclosing them in double asterisks (e.g., **Key Nutrients:**).
-- Each item under a heading MUST start on a new line with a hyphen (-).
-
-{{#if pregnancyTrimester}}
-You are providing advice for a pregnant person in trimester {{{pregnancyTrimester}}}.
-
-**User Preferences:**
-- Dietary: {{{dietaryPreferences}}}
-- Medical History: {{{medicalHistory}}}
-
-**Your Task:** Provide a detailed, structured response with specific sections for diet, lifestyle, and exercise.
-
-**Output format:**
-- **recommendations**: Use these exact headings: **Key Nutrients:**, **Foods to Eat:**, **Foods to Avoid:**, and **Lifestyle & Exercise:**. This should be comprehensive.
-- **dashboardTip**: Provide a very short, 2-3 line summary of the absolute most important advice for this trimester. For example, "Focus on folate-rich foods like lentils and spinach for neural tube development. Stay hydrated and consider gentle walks."
-
-{{else if postDelivery}}
-You are providing advice for a person who has recently given birth.
-
-**User Preferences:**
-- Dietary: {{{dietaryPreferences}}}
-
-**Your Task:** Provide a detailed, structured response for postpartum recovery.
-
-**Output format:**
-- **recommendations**: Use these exact headings: **Key Nutrients for Recovery:**, **Foods for Healing & Energy:**, **Gentle Exercises:**.
-- **dashboardTip**: Provide a very short, 2-3 line summary about postpartum recovery nutrition.
-
-{{else}}
-You are providing general nutrition advice based on the menstrual cycle.
-
-**User Information:**
-- Cycle Phase: {{{cyclePhase}}}
-- Mood: {{{mood}}}
-- Physical Symptoms: {{{physicalSymptoms}}}
-- Dietary Preferences: {{{dietaryPreferences}}}
-- Medical History: {{{medicalHistory}}}
-
-**Your Task:** Provide personalized nutrition and diet recommendations.
-
-**Output format:**
-- **recommendations**: Use headings like **Foods to Focus On:** and **Lifestyle Tips:**. Provide a comprehensive response in a single block of text, following the formatting rules.
-- **dashboardTip**: Create a short, 2-3 line summary of the main point in the recommendations.
-{{/if}}
-`,
-});
-
 const hormonalCycleNutritionFlow = ai.defineFlow(
   {
     name: 'hormonalCycleNutritionFlow',
     inputSchema: HormonalCycleNutritionInputSchema,
     outputSchema: HormonalCycleNutritionOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    let context = '';
+    
+    if (input.pregnancyTrimester) {
+      context = `You are providing advice for a pregnant person in trimester ${input.pregnancyTrimester}.`;
+    } else if (input.postDelivery) {
+      context = 'You are providing advice for a person who has recently given birth.';
+    } else {
+      context = `You are providing general nutrition advice based on the menstrual cycle. Cycle Phase: ${input.cyclePhase || 'Not specified'}`;
+    }
+
+    const userInfo = `
+**User Information:**
+- Dietary Preferences: ${input.dietaryPreferences || 'Not specified'}
+- Medical History: ${input.medicalHistory || 'Not specified'}
+- Mood: ${input.mood || 'Not specified'}
+- Physical Symptoms: ${input.physicalSymptoms || 'Not specified'}
+${input.cyclePhase ? `- Cycle Phase: ${input.cyclePhase}` : ''}
+${input.pregnancyTrimester ? `- Pregnancy Trimester: ${input.pregnancyTrimester}` : ''}
+${input.postDelivery ? '- Post-Delivery: Yes' : ''}
+`;
+
+    const prompt = `You are an expert nutritionist specializing in women's hormonal health, pregnancy, and postpartum recovery.
+
+**IMPORTANT FORMATTING RULES:**
+- All section headings MUST be bolded by enclosing them in double asterisks (e.g., **Key Nutrients:**).
+- Each item under a heading MUST start on a new line with a hyphen (-).
+
+${context}
+${userInfo}
+
+**Your Task:** Provide personalized nutrition and diet recommendations based on the user's specific situation.
+
+${input.pregnancyTrimester ? `
+**For Pregnancy Trimester ${input.pregnancyTrimester}:**
+Provide a detailed, structured response with specific sections for diet, lifestyle, and exercise.
+Use these exact headings: **Key Nutrients:**, **Foods to Eat:**, **Foods to Avoid:**, and **Lifestyle & Exercise:**.
+` : input.postDelivery ? `
+**For Postpartum Recovery:**
+Provide a detailed, structured response for postpartum recovery.
+Use these exact headings: **Key Nutrients for Recovery:**, **Foods for Healing & Energy:**, **Gentle Exercises:**.
+` : `
+**For Menstrual Cycle Nutrition:**
+Provide personalized nutrition and diet recommendations based on the menstrual cycle phase.
+Use headings like **Foods to Focus On:** and **Lifestyle Tips:**.
+`}
+
+**Output Format:**
+Output a valid JSON object matching this exact schema:
+{
+  "recommendations": "Detailed recommendations with bold headings and bullet points",
+  "dashboardTip": "Very short 2-3 line summary of most important advice"
+}
+
+**Example Output:**
+{
+  "recommendations": "**Key Nutrients:**\\n- Iron-rich foods\\n- Folate\\n- Calcium\\n\\n**Foods to Eat:**\\n- Leafy greens\\n- Lean proteins\\n- Whole grains",
+  "dashboardTip": "Focus on iron-rich foods during this phase. Stay hydrated and include plenty of leafy greens in your diet."
+}
+
+Ensure your response is comprehensive and follows all formatting rules.`;
+
+    const result = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
+      prompt,
+      config: {
+        temperature: 0.7,
+        topK: 50,
+        topP: 0.9,
+      },
+    });
+
+    try {
+      const response = JSON.parse(result.text);
+      return {
+        recommendations: response.recommendations || "Please consult with a nutritionist for personalized dietary recommendations.",
+        dashboardTip: response.dashboardTip || "Focus on balanced nutrition and consult a healthcare professional for specific advice."
+      };
+    } catch (error) {
+      // Fallback response if JSON parsing fails
+      return {
+        recommendations: "**Key Nutrients:**\n- Focus on a balanced diet with essential vitamins and minerals\n- Stay hydrated with plenty of water\n- Include fiber-rich foods for digestive health\n\n**General Advice:**\n- Consult with a healthcare professional for personalized recommendations\n- Maintain regular meal times and portion control",
+        dashboardTip: "Focus on balanced nutrition and consult a healthcare professional for personalized dietary advice."
+      };
+    }
   }
 );

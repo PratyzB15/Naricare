@@ -1,130 +1,308 @@
 'use client';
 
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Flower2, Heart, Globe } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
+// Public images
+const logoSrc = '/images/logo.png';
+const doctorImgSrc = '/images/doctor.png'; // use the transparent/updated doctor image
+const periodIcon = '/images/period-icon.png';
+const pregnancyIcon = '/images/pregnancy-icon.png';
+const cancerIcon = '/images/cancer-icon.png';
+const medcartIcon = '/images/medcart-icon.png';
+const profilePic = '/images/pic.jpg';
 
-const translations = {
-    en: {
-        title1: "Your Health,",
-        title2: "Your Priority",
-        description: "Comprehensive women's health tracking with period monitoring, fertility insights, and personalized wellness guidance - designed for every woman, everywhere.",
-        start_tracking: "Start Tracking Today",
-        sign_in: "Sign In",
-        support: "Support",
-        languages: "Languages",
-        safe_secure: "Safe & Secure"
-    },
-    hi: {
-        title1: "आपका स्वास्थ्य,",
-        title2: "आपकी प्राथमिकता",
-        description: "पीरियड मॉनिटरिंग, प्रजनन क्षमता की जानकारी और व्यक्तिगत कल्याण मार्गदर्शन के साथ व्यापक महिला स्वास्थ्य ट्रैकिंग - हर महिला के लिए, हर जगह डिज़ाइन किया गया।",
-        start_tracking: "आज ही ट्रैकिंग शुरू करें",
-        sign_in: "साइन इन करें",
-        support: "समर्थन",
-        languages: "भाषाएँ",
-        safe_secure: "सुरक्षित"
-    }
-}
+const features = [
+  { img: periodIcon, title: 'Period Tracking', desc: 'Track your cycle with ease and accuracy.' },
+  { img: pregnancyIcon, title: 'Pregnancy Care', desc: 'Monitor and manage your pregnancy journey.' },
+  { img: cancerIcon, title: 'Cancer Self Test', desc: 'Early detection self-assessment tools.' },
+  { img: medcartIcon, title: 'MedCart', desc: 'Access medicines and health essentials quickly.' },
+];
 
+// ✅ Wavy background generator
+const generateWaves = (
+  id: string,
+  color1: string,
+  color2: string,
+  count: number = 12
+): JSX.Element => {
+  const paths: JSX.Element[] = [];
 
-export default function WelcomePage() {
-    const [language, setLanguage] = useState('en');
-
-    useEffect(() => {
-        const savedLang = localStorage.getItem('appLanguage');
-        if (savedLang && ['en', 'hi'].includes(savedLang)) {
-            setLanguage(savedLang);
-        }
-    }, []);
-
-    const handleLanguageChange = (lang: string) => {
-        setLanguage(lang);
-        localStorage.setItem('appLanguage', lang);
-        window.dispatchEvent(new Event('storage'));
-    }
-    
-    const t = translations[language as keyof typeof translations] || translations.en;
-
-    return (
-        <div className="min-h-screen bg-background">
-          <header className="absolute top-0 left-0 right-0 p-4 flex justify-end">
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Globe className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => handleLanguageChange('en')}>English</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleLanguageChange('hi')}>हिन्दी (Hindi)</DropdownMenuItem>
-                  <DropdownMenuItem disabled>বাংলা (Bengali)</DropdownMenuItem>
-                  <DropdownMenuItem disabled>తెలుగు (Telugu)</DropdownMenuItem>
-                  <DropdownMenuItem disabled>ಕನ್ನಡ (Kannada)</DropdownMenuItem>
-                  <DropdownMenuItem disabled>অসমীয়া (Assamese)</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-          </header>
-          <section className="bg-secondary/50 py-12 sm:py-20 lg:py-28">
-            <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6 text-center lg:text-left">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tighter">
-                  {t.title1} <br />
-                  <span className="text-primary">{t.title2}</span>
-                </h1>
-                <p className="max-w-md mx-auto lg:mx-0 text-muted-foreground md:text-lg">
-                  {t.description}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                    <Link href="/signup">{t.start_tracking}</Link>
-                  </Button>
-                  <Button asChild size="lg" variant="outline">
-                     <Link href="/signin">{t.sign_in}</Link>
-                  </Button>
-                </div>
-                <div className="flex justify-center lg:justify-start gap-8 pt-4">
-                    <div>
-                        <p className="font-bold text-primary text-lg">24/7</p>
-                        <p className="text-sm text-muted-foreground">{t.support}</p>
-                    </div>
-                     <div>
-                        <p className="font-bold text-green-500 text-lg">100+</p>
-                        <p className="text-sm text-muted-foreground">{t.languages}</p>
-                    </div>
-                     <div>
-                        <p className="font-bold text-blue-500 text-lg">{t.safe_secure}</p>
-                        <p className="text-sm text-muted-foreground">& Secure</p>
-                    </div>
-                </div>
-              </div>
-              <div className="relative">
-                 <Image
-                    src="https://placehold.co/600x400.png"
-                    data-ai-hint="woman health"
-                    width={600}
-                    height={400}
-                    alt="Women's Health"
-                    className="rounded-xl shadow-2xl"
-                 />
-                 <div className="absolute -top-4 -right-4 bg-white p-3 rounded-full shadow-lg">
-                    <Flower2 className="text-primary h-6 w-6"/>
-                 </div>
-                 <div className="absolute -bottom-6 left-10 bg-white p-3 rounded-full shadow-lg">
-                    <Heart className="text-green-400 h-6 w-6"/>
-                 </div>
-              </div>
-            </div>
-          </section>
-        </div>
+  for (let i = 0; i < count; i++) {
+    paths.push(
+      <path
+        key={`${id}-${i}`}
+        d={`
+          M ${100 + i * 5}, ${300 - i * 15}
+          C ${200 + i * 20}, ${100 + i * 10}, ${400 - i * 15}, ${500 + i * 5}, ${600}, ${300 + i * 10}
+        `}
+        fill="none"
+        stroke={`url(#${id})`}
+        strokeWidth="1.5"
+        opacity={0.5 - i * 0.03}
+      />
     );
-}
+  }
+
+  return (
+    <svg
+      key={id}
+      className="absolute w-[900px] h-[900px] opacity-35"
+      viewBox="0 0 800 800"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={color1} />
+          <stop offset="100%" stopColor={color2} />
+        </linearGradient>
+      </defs>
+      {paths}
+    </svg>
+  );
+};
+
+const HeroSection: React.FC = () => {
+  const [tracking, setTracking] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  return (
+    <div className="relative w-screen min-h-screen bg-gradient-to-br from-pink-100 via-fuchsia-50 to-purple-100 overflow-hidden">
+      
+      {/* Background Wavy Line Patterns */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 scale-125">
+          {generateWaves("waveRed", "#ff4e50", "#dd2476", 20)}
+        </div>
+        <div className="absolute bottom-0 -right-40 scale-125 rotate-180">
+          {generateWaves("waveYellow", "#FFD700", "#FF8C00", 18)}
+        </div>
+        <div className="absolute top-1/3 -left-60 scale-110 rotate-12">
+          {generateWaves("wavePeach", "#ff9a9e", "#fecfef", 16)}
+        </div>
+        <div className="absolute bottom-1/4 right-0 scale-125 -rotate-12">
+          {generateWaves("waveBlue", "#89f7fe", "#66a6ff", 18)}
+        </div>
+        <div className="absolute top-1/2 left-1/4 scale-100 rotate-45">
+          {generateWaves("waveMix", "#ff6a00", "#ee0979", 15)}
+        </div>
+        {/* ✨ Extra wavy sets for richer background */}
+        <div className="absolute -bottom-20 left-1/3 scale-125 rotate-6">
+          {generateWaves("waveExtra", "#9d50bb", "#6e48aa", 14)}
+        </div>
+        <div className="absolute top-10 right-1/4 scale-90 -rotate-12">
+          {generateWaves("waveLight", "#fbc2eb", "#a6c1ee", 12)}
+        </div>
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+  {/* 🔴 Red to Pink */}
+  <div className="absolute -top-40 -left-40 scale-125">
+    {generateWaves("waveRed", "#ff4e50", "#dd2476", 20)}
+  </div>
+
+  {/* 🟡 Yellow to Orange */}
+  <div className="absolute bottom-0 -right-40 scale-125 rotate-180">
+    {generateWaves("waveYellow", "#FFD700", "#FF8C00", 18)}
+  </div>
+
+  {/* 🍑 Peach to Light Pink */}
+  <div className="absolute top-1/3 -left-60 scale-110 rotate-12">
+    {generateWaves("wavePeach", "#ff9a9e", "#fecfef", 16)}
+  </div>
+
+  {/* 🔵 Aqua to Blue */}
+  <div className="absolute bottom-1/4 right-0 scale-125 -rotate-12">
+    {generateWaves("waveBlue", "#89f7fe", "#66a6ff", 18)}
+  </div>
+
+  {/* 🟠 Orange to Magenta */}
+  <div className="absolute top-1/2 left-1/4 scale-100 rotate-45">
+    {generateWaves("waveMix", "#ff6a00", "#ee0979", 15)}
+  </div>
+
+  {/* 🟣 Purple to Deep Violet */}
+  <div className="absolute -bottom-20 left-1/3 scale-125 rotate-6">
+    {generateWaves("wavePurple", "#9d50bb", "#6e48aa", 14)}
+  </div>
+
+  {/* 🌸 Light Pink to Blue */}
+  <div className="absolute top-10 right-1/4 scale-90 -rotate-12">
+    {generateWaves("wavePastel", "#fbc2eb", "#a6c1ee", 12)}
+  </div>
+
+  {/* 🟢 Green Minty tones */}
+  <div className="absolute top-1/4 left-1/2 scale-110 rotate-3">
+    {generateWaves("waveGreen", "#43e97b", "#38f9d7", 15)}
+  </div>
+
+  {/* 🌅 Sunset Vibe */}
+  <div className="absolute bottom-1/2 right-1/3 scale-100 rotate-180">
+    {generateWaves("waveSunset", "#f83600", "#f9d423", 16)}
+  </div>
+
+  {/* ⚪ White Glow effect */}
+  <div className="absolute bottom-10 left-1/4 scale-95 rotate-12 opacity-60">
+    {generateWaves("waveGlow", "#ffffff", "#dcdcdc", 10)}
+  </div>
+
+  {/* 🌊 Blue-Green Ocean */}
+  <div className="absolute top-1/6 right-1/5 scale-105 -rotate-6">
+    {generateWaves("waveOcean", "#00c6ff", "#0072ff", 14)}
+  </div>
+
+  {/* 🌈 Top-Right Corner Waves */}
+<div className="absolute -top-32 -right-32 scale-125 rotate-12">
+  {generateWaves("waveTopRight", "#ff7eb3", "#ff758c", 18)}
+</div>
+<div className="absolute top-20 right-10 scale-100 -rotate-6 opacity-80">
+  {generateWaves("waveTopRight2", "#43e97b", "#38f9d7", 14)}
+</div>
+<div className="absolute top-1/4 right-1/6 scale-110 rotate-3 opacity-70">
+  {generateWaves("waveTopRight3", "#00c6ff", "#0072ff", 12)}
+</div>
+
+</div>
+
+      </div>
+
+      {/* Logo */}
+      <div className="absolute top-6 left-6 z-50">
+        <Image
+          src={logoSrc}
+          alt="NARICARE Logo"
+          width={80}
+          height={80}
+          priority
+          className="rounded-full border border-pink-80 shadow-md"
+        />
+      </div>
+
+      {/* Hero Section */}
+      <section className="flex flex-col lg:flex-row items-center justify-between min-h-screen px-6 py-12 lg:px-24 lg:py-8 relative z-10">
+        
+        {/* Left Content */}
+        <div className="flex-1 w-full max-w-5xl animate-fade-in mt-16 lg:mt-20">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-gray-800 text-center">
+            Your Health <span className="text-transparent bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text">Your Priority</span>
+          </h1>
+          
+          <div className="text-center mt-6">
+            <p className="text-xl sm:text-2xl font-medium text-gray-600">
+              A Platform for Every Stage of Women's Wellness
+            </p>
+            <p className="text-lg text-gray-600 leading-relaxed mt-4 max-w-3xl mx-auto">
+              From period tracking and pregnancy care to fertility insights, self-checks, emergency SOS, 
+              and personalized wellness guidance — all designed to empower every woman, everywhere.
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-8 justify-center">
+            <Link href="/signin">
+              <button
+                onClick={() => setTracking(!tracking)}
+                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-lg px-8 py-4 rounded-full font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              >
+                {tracking ? "Stop Tracking" : "Start Tracking Now"}
+              </button>
+            </Link>
+            <Link href="/signin">
+              <button
+                onClick={() => setSignedIn(!signedIn)}
+                className="bg-white text-pink-600 border-2 border-pink-200 text-lg px-8 py-4 rounded-full font-semibold hover:bg-pink-50 transition-all duration-300 shadow-md hover:shadow-lg"
+              >
+                {signedIn ? "Signed In" : "Sign In"}
+              </button>
+            </Link>
+          </div>
+
+          {/* Feature Cards */}
+          <motion.div
+            className="flex flex-row justify-center gap-6 pt-14 overflow-x-auto"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{
+              visible: {
+                transition: { staggerChildren: 0.25 }
+              }
+            }}
+          >
+            {features.map((feature, idx) => (
+              <motion.div
+                key={idx}
+                className="feature-card min-w-[220px] max-w-[240px] p-6 rounded-2xl text-center bg-white/60 backdrop-blur-sm border border-white/50 shadow-md hover:shadow-xl transform transition-all duration-300 hover:scale-105"
+                variants={{
+                  hidden: { opacity: 0, y: 40 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } }
+                }}
+              >
+                <Image
+                  src={feature.img}
+                  alt={feature.title}
+                  width={70}
+                  height={70}
+                  className="mx-auto mb-4 drop-shadow"
+                />
+                <h3 className="text-xl font-semibold text-gray-800">{feature.title}</h3>
+                <p className="text-gray-600 mt-2">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* Right Doctor Image - moved lower */}
+        <div className="flex-1 flex justify-center lg:justify-end mt-12 lg:mt-auto relative pb-10">
+          <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[480px] lg:h-[560px]">
+            <Image
+              src={doctorImgSrc}
+              alt="Doctor Illustration"
+              fill
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+            <div className="absolute -left-4 top-1/3 w-14 h-14 bg-pink-200 rounded-full animate-float opacity-70"></div>
+            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-purple-200 rounded-full animate-float opacity-50" style={{ animationDelay: '1s' }}></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="text-center py-6 text-gray-600 text-sm bg-gradient-to-t from-transparent to-pink-50">
+        © 2025 NARICARE. All rights reserved.
+      </footer>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+        .animate-fade-in {
+          animation: fadeIn 1.2s ease-out forwards;
+        }
+        .feature-card:hover {
+          transform: scale(1.06);
+        }
+        .drop-shadow {
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default HeroSection;
